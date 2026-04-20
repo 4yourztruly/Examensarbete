@@ -2,7 +2,7 @@
   "name": "examensarbete",
   "private": true,
   "version": "0.0.0",
-  "homepage": "https://4yourztruly.github.io/examensarbete",
+  "homepage": "https://4yourztruly.github.io/Examensarbete",
   "type": "module",
   "scripts": {
     "dev": "vite",
