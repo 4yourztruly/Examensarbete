@@ -60,7 +60,7 @@ export default function Table() {
         {SEATS.map((seat) => (
           <div key={seat.id} className={`absolute ${seat.className}`}>
             {/* Replace this with your <PlayerSeat /> component later */}
-            <PlayerSeat>{seat.id}</PlayerSeat>
+            <PlayerSeat id={1}></PlayerSeat>
           </div>
         ))}
       </div>

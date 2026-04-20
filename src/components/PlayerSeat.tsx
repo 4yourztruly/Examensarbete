@@ -24,7 +24,7 @@ export default function PlayerSeat({
               key={i}
               className={`w-10 h-14 rounded-md border-2 flex items-center justify-center text-sm font-bold shadow-md bg-white
                 ${i === 0 ? "-rotate-6 -mr-2" : "rotate-6"}
-                ${card.suit === "♥" || card.suit === "♦" ? "text-red-500" : "text-gray-900"}
+                ${card.suit === "hearts" || card.suit === "diamonds" ? "text-red-500" : "text-gray-900"}
               `}
             >
               {card.faceUp ? (
