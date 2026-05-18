@@ -1,4 +1,5 @@
 import type { Card } from "../types/card";
+import CardComponent from "./Card";
 
 interface SeatProps {
   id: number;
@@ -18,25 +19,9 @@ export default function PlayerSeat({
   return (
     <div className="relative flex flex-col items-center">
       {cards.length > 0 && (
-        <div className="relative flex justify-center mb-[-18px] z-0">
-          {cards.map((card, i) => (
-            <div
-              key={i}
-              className={`w-10 h-14 rounded-md border-2 flex items-center justify-center text-sm font-bold shadow-md bg-white
-                ${i === 0 ? "-rotate-6 -mr-2" : "rotate-6"}
-                ${card.suit === "hearts" || card.suit === "diamonds" ? "text-red-500" : "text-gray-900"}
-              `}
-            >
-              {card.faceUp ? (
-                <span>
-                  {card.rank}
-                  {card.suit}
-                </span>
-              ) : (
-                <span className="text-blue-900 text-lg">🂠</span>
-              )}
-            </div>
-          ))}
+        <div className="flex justify-center mb-[-20px] z-0">
+          <CardComponent {...cards[0]} size="md" rotate={-6} />
+          <CardComponent {...cards[1]} size="md" rotate={6} />
         </div>
       )}
 
