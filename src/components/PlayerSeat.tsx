@@ -19,7 +19,7 @@ export default function PlayerSeat({
   return (
     <div className="relative flex flex-col items-center">
       {cards.length > 0 && (
-        <div className="flex justify-center mb-[-20px] z-0">
+        <div className="flex justify-center -mb-5 z-0">
           <CardComponent {...cards[0]} size="md" rotate={-6} />
           <CardComponent {...cards[1]} size="md" rotate={6} />
         </div>

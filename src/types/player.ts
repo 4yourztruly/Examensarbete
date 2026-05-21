@@ -1,11 +1,13 @@
 import type { Card } from "./card";
 
 export interface Player {
-  id: string;
+  id: number;
   name: string;
-  chips: number;
-  hand: Card[];
+  balance: number;
+  cards: Card[];
   currentBet: number;
   folded: boolean;
+  isUser: boolean;
   isDealer: boolean;
+  allIn: boolean;
 }
