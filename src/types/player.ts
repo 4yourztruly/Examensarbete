@@ -1,5 +1,7 @@
 import type { Card } from "./card";
 
+export type BotArchetype = "passive" | "aggressive" | "adaptive";
+
 export interface Player {
   id: number;
   name: string;
@@ -10,4 +12,5 @@ export interface Player {
   isUser: boolean;
   isDealer: boolean;
   allIn: boolean;
+  archetype?: BotArchetype;
 }
