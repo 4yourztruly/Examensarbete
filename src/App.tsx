@@ -1,7 +1,8 @@
+import { useGameStore } from "./store/gameStore";
+import StartScreen from "./screens/StartScreen";
+import GameScreen from "./screens/GameScreen";
+
 export default function App() {
-  return (
-    <>
-      <div className="bg-gray-700 h-full w-full"></div>
-    </>
-  );
+  const phase = useGameStore((s) => s.phase);
+  return phase === "idle" ? <StartScreen /> : <GameScreen />;
 }

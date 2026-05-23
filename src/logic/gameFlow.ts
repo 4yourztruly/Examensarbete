@@ -1,6 +1,5 @@
 import type { Player, BotArchetype } from "../types/player";
 import type { Card } from "../types/card";
-import type { GamePhase } from "../types/game";
 import { createDeck, shuffleDeck, dealCards } from "./deck";
 import { postBlinds, BIG_BLIND } from "./betting";
 import { getHandStrength } from "./hand";
@@ -18,6 +17,7 @@ export function initializePlayers(previousBalances?: number[]): Player[] {
       isDealer: false,
       allIn: false,
       archetype: undefined,
+      lastAction: null,
     },
     {
       id: 1,
@@ -30,10 +30,11 @@ export function initializePlayers(previousBalances?: number[]): Player[] {
       isDealer: false,
       allIn: false,
       archetype: "aggressive",
+      lastAction: null,
     },
     {
       id: 2,
-      name: "Travis",
+      name: "Utopia",
       balance: previousBalances?.[2] ?? 1000,
       cards: [],
       currentBet: 0,
@@ -42,10 +43,11 @@ export function initializePlayers(previousBalances?: number[]): Player[] {
       isDealer: false,
       allIn: false,
       archetype: "passive",
+      lastAction: null,
     },
     {
       id: 3,
-      name: "Laflame",
+      name: "Travis",
       balance: previousBalances?.[3] ?? 1000,
       cards: [],
       currentBet: 0,
@@ -54,10 +56,11 @@ export function initializePlayers(previousBalances?: number[]): Player[] {
       isDealer: false,
       allIn: false,
       archetype: "adaptive",
+      lastAction: null,
     },
     {
       id: 4,
-      name: "Don",
+      name: "LaFlame",
       balance: previousBalances?.[4] ?? 1000,
       cards: [],
       currentBet: 0,
@@ -66,10 +69,11 @@ export function initializePlayers(previousBalances?: number[]): Player[] {
       isDealer: false,
       allIn: false,
       archetype: "aggressive",
+      lastAction: null,
     },
     {
       id: 5,
-      name: "Toliver",
+      name: "Scott",
       balance: previousBalances?.[5] ?? 1000,
       cards: [],
       currentBet: 0,
@@ -78,6 +82,7 @@ export function initializePlayers(previousBalances?: number[]): Player[] {
       isDealer: false,
       allIn: false,
       archetype: "passive",
+      lastAction: null,
     },
   ];
 }
@@ -131,11 +136,6 @@ export function dealTurnOrRiver(deck: Card[]): {
   return { card: { ...cards[0], faceUp: true }, remaining };
 }
 
-export function getNextPhase(current: GamePhase): GamePhase {
-  const order: GamePhase[] = ["preflop", "flop", "turn", "river", "showdown"];
-  return order[order.indexOf(current) + 1] ?? "showdown";
-}
-
 export function getBotAction(
   bot: Player,
   communityCards: Card[],
@@ -144,43 +144,58 @@ export function getBotAction(
 ): "fold" | "check" | "call" | "raise" {
   const strength = getHandStrength(bot.cards, communityCards);
   const callAmount = highBet - bot.currentBet;
+  const isPreflop = communityCards.length === 0;
   const rand = Math.random();
 
   if (archetype === "passive") {
+    const raiseThreshold = isPreflop ? 0.93 : 0.9;
+    const callThreshold = isPreflop ? 0.88 : 0.83;
+
     if (callAmount === 0) {
-      return strength > 0.6 ? "raise" : "check";
+      if (strength > raiseThreshold) return "raise";
+      return "check";
     }
-    if (strength > 0.75) return rand < 0.7 ? "raise" : "call";
-    if (strength > 0.5) return "call";
+    if (strength > raiseThreshold) return rand < 0.6 ? "raise" : "call";
+    if (strength > callThreshold) return "call";
     return "fold";
   }
 
   if (archetype === "aggressive") {
+    const raiseThreshold = isPreflop ? 0.6 : 0.55;
+    const callThreshold = isPreflop ? 0.48 : 0.4;
+    const foldThreshold = isPreflop ? 0.35 : 0.25;
+
     if (callAmount === 0) {
-      return strength > 0.3 ? "raise" : "check";
+      if (strength > raiseThreshold) return "raise";
+      if (strength > callThreshold && rand < 0.45) return "raise"; // semi-bluff
+      return "check";
     }
-    if (strength > 0.5) return "raise";
-    if (strength > 0.25) return rand < 0.5 ? "call" : "raise"; // semi-bluff
-    return rand < 0.35 ? "fold" : "call"; // rarely folds
+    if (strength > raiseThreshold) return rand < 0.6 ? "raise" : "call";
+    if (strength > callThreshold) return "call";
+    if (strength > foldThreshold && rand < 0.25) return "call"; // occasional float
+    return "fold";
   }
 
   if (archetype === "adaptive") {
-    const isDeceiving = rand < 0.25; // 25% chance to do the opposite of expected
+    const raiseThreshold = isPreflop ? 0.72 : 0.67;
+    const callThreshold = isPreflop ? 0.55 : 0.45;
+    const foldThreshold = isPreflop ? 0.4 : 0.3;
+    const isBluffing = rand < 0.12;
+    const isSlowPlaying = rand < 0.12;
 
     if (callAmount === 0) {
-      if (isDeceiving) return strength > 0.5 ? "check" : "raise"; // slow play or bluff
-      return strength > 0.5 ? "raise" : "check";
+      if (strength > raiseThreshold) return isSlowPlaying ? "check" : "raise";
+      if (strength > callThreshold && rand < 0.4) return "raise";
+      if (isBluffing && rand < 0.5) return "raise";
+      return "check";
     }
-    if (isDeceiving) {
-      if (strength > 0.65) return "call"; // slow play strong hand
-      return rand < 0.5 ? "raise" : "call"; // bluff with weak hand
-    }
-    if (strength > 0.65) return "raise";
-    if (strength > 0.4) return "call";
-    return rand < 0.3 ? "fold" : "call";
+    if (strength > raiseThreshold) return isSlowPlaying ? "call" : "raise";
+    if (strength > callThreshold) return rand < 0.35 ? "raise" : "call";
+    if (strength > foldThreshold) return rand < 0.25 ? "call" : "fold";
+    return isBluffing ? "call" : "fold";
   }
 
-  return "call";
+  return "fold";
 }
 
 export { BIG_BLIND };
