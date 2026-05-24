@@ -102,7 +102,7 @@ export default function StartScreen() {
             >
               {bot.type}
             </span>
-            <span className="text-gray-500 text-[10px] max-w-[80px] leading-tight">
+            <span className="text-gray-500 text-[10px] max-w-20 leading-tight">
               {bot.desc}
             </span>
           </div>

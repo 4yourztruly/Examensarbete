@@ -12,6 +12,7 @@ export interface Player {
   isUser: boolean;
   isDealer: boolean;
   allIn: boolean;
+  eliminated: boolean;
   archetype?: BotArchetype;
   lastAction: string | null;
 }

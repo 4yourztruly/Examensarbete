@@ -4,92 +4,71 @@ import { createDeck, shuffleDeck, dealCards } from "./deck";
 import { postBlinds, BIG_BLIND } from "./betting";
 import { getHandStrength } from "./hand";
 
-export function initializePlayers(previousBalances?: number[]): Player[] {
-  return [
+export function initializePlayers(
+  previousBalances?: number[],
+  previousEliminated?: boolean[],
+): Player[] {
+  const base = [
     {
       id: 0,
       name: "You",
-      balance: previousBalances?.[0] ?? 1000,
-      cards: [],
-      currentBet: 0,
-      folded: false,
       isUser: true,
-      isDealer: false,
-      allIn: false,
       archetype: undefined,
-      lastAction: null,
+      eliminated: false,
     },
     {
       id: 1,
       name: "Jack",
-      balance: previousBalances?.[1] ?? 1000,
-      cards: [],
-      currentBet: 0,
-      folded: false,
       isUser: false,
-      isDealer: false,
-      allIn: false,
-      archetype: "aggressive",
-      lastAction: null,
+      archetype: "aggressive" as BotArchetype,
+      eliminated: false,
     },
     {
       id: 2,
       name: "Utopia",
-      balance: previousBalances?.[2] ?? 1000,
-      cards: [],
-      currentBet: 0,
-      folded: false,
       isUser: false,
-      isDealer: false,
-      allIn: false,
-      archetype: "passive",
-      lastAction: null,
+      archetype: "passive" as BotArchetype,
+      eliminated: false,
     },
     {
       id: 3,
       name: "Travis",
-      balance: previousBalances?.[3] ?? 1000,
-      cards: [],
-      currentBet: 0,
-      folded: false,
       isUser: false,
-      isDealer: false,
-      allIn: false,
-      archetype: "adaptive",
-      lastAction: null,
+      archetype: "adaptive" as BotArchetype,
+      eliminated: false,
     },
     {
       id: 4,
       name: "LaFlame",
-      balance: previousBalances?.[4] ?? 1000,
-      cards: [],
-      currentBet: 0,
-      folded: false,
       isUser: false,
-      isDealer: false,
-      allIn: false,
-      archetype: "aggressive",
-      lastAction: null,
+      archetype: "aggressive" as BotArchetype,
+      eliminated: false,
     },
     {
       id: 5,
       name: "Scott",
-      balance: previousBalances?.[5] ?? 1000,
-      cards: [],
-      currentBet: 0,
-      folded: false,
       isUser: false,
-      isDealer: false,
-      allIn: false,
-      archetype: "passive",
-      lastAction: null,
+      archetype: "passive" as BotArchetype,
+      eliminated: false,
     },
   ];
+  return base.map((b, i) => ({
+    ...b,
+    balance: previousBalances?.[i] ?? 1000,
+    eliminated: previousEliminated?.[i] ?? false,
+    cards: [],
+    currentBet: 0,
+    folded: false,
+    isDealer: false,
+    allIn: false,
+    lastAction: null,
+  }));
 }
 
 export function setupNewHand(
   previousBalances: number[] | undefined,
   previousDealerIndex: number,
+  previousEliminated?: boolean[],
 ): {
   players: Player[];
   deck: Card[];
@@ -98,29 +77,60 @@ export function setupNewHand(
   firstToActIndex: number;
 } {
   const deck = shuffleDeck(createDeck());
-  let players = initializePlayers(previousBalances);
+  let players = initializePlayers(previousBalances, previousEliminated);
 
-  const dealerIndex = (previousDealerIndex + 1) % players.length;
+  players = players.map((p) => ({
+    ...p,
+    eliminated: !p.isUser && p.balance <= 0,
+  }));
+
+  let dealerIndex = (previousDealerIndex + 1) % players.length;
+  let tries = 0;
+  while (players[dealerIndex].eliminated && tries < players.length) {
+    dealerIndex = (dealerIndex + 1) % players.length;
+    tries++;
+  }
   players = players.map((p, i) => ({ ...p, isDealer: i === dealerIndex }));
 
   let remaining = deck;
   players = players.map((p) => {
+    if (p.eliminated) return p;
     const { cards, remaining: rest } = dealCards(remaining, 2);
     remaining = rest;
     return { ...p, cards: cards.map((c) => ({ ...c, faceUp: p.isUser })) };
   });
 
-  const { players: withBlinds, pot } = postBlinds(players, dealerIndex);
-  const bbIdx = (dealerIndex + 2) % players.length;
-  const firstToActIndex = (bbIdx + 1) % players.length;
+  const activePlayers = players.filter((p) => !p.eliminated);
+  const dealerActiveIdx = activePlayers.findIndex(
+    (p) => p.id === players[dealerIndex].id,
+  );
+  const sbActive = activePlayers[(dealerActiveIdx + 1) % activePlayers.length];
+  const bbActive = activePlayers[(dealerActiveIdx + 2) % activePlayers.length];
 
-  return {
-    players: withBlinds,
-    deck: remaining,
-    pot,
-    dealerIndex,
-    firstToActIndex,
-  };
+  let pot = 0;
+  players = players.map((p) => {
+    if (p.id === sbActive.id) {
+      const blind = Math.min(BIG_BLIND / 2, p.balance);
+      pot += blind;
+      return { ...p, balance: p.balance - blind, currentBet: blind };
+    }
+    if (p.id === bbActive.id) {
+      const blind = Math.min(BIG_BLIND, p.balance);
+      pot += blind;
+      return { ...p, balance: p.balance - blind, currentBet: blind };
+    }
+    return p;
+  });
+
+  const bbPlayerIdx = players.findIndex((p) => p.id === bbActive.id);
+  let firstToActIndex = (bbPlayerIdx + 1) % players.length;
+  tries = 0;
+  while (players[firstToActIndex].eliminated && tries < players.length) {
+    firstToActIndex = (firstToActIndex + 1) % players.length;
+    tries++;
+  }
+
+  return { players, deck: remaining, pot, dealerIndex, firstToActIndex };
 }
 
 export function dealFlop(deck: Card[]): { cards: Card[]; remaining: Card[] } {
@@ -150,11 +160,7 @@ export function getBotAction(
   if (archetype === "passive") {
     const raiseThreshold = isPreflop ? 0.93 : 0.9;
     const callThreshold = isPreflop ? 0.88 : 0.83;
-
-    if (callAmount === 0) {
-      if (strength > raiseThreshold) return "raise";
-      return "check";
-    }
+    if (callAmount === 0) return strength > raiseThreshold ? "raise" : "check";
     if (strength > raiseThreshold) return rand < 0.6 ? "raise" : "call";
     if (strength > callThreshold) return "call";
     return "fold";
@@ -164,15 +170,14 @@ export function getBotAction(
     const raiseThreshold = isPreflop ? 0.6 : 0.55;
     const callThreshold = isPreflop ? 0.48 : 0.4;
     const foldThreshold = isPreflop ? 0.35 : 0.25;
-
     if (callAmount === 0) {
       if (strength > raiseThreshold) return "raise";
-      if (strength > callThreshold && rand < 0.45) return "raise"; // semi-bluff
+      if (strength > callThreshold && rand < 0.45) return "raise";
       return "check";
     }
     if (strength > raiseThreshold) return rand < 0.6 ? "raise" : "call";
     if (strength > callThreshold) return "call";
-    if (strength > foldThreshold && rand < 0.25) return "call"; // occasional float
+    if (strength > foldThreshold && rand < 0.25) return "call";
     return "fold";
   }
 
@@ -182,7 +187,6 @@ export function getBotAction(
     const foldThreshold = isPreflop ? 0.4 : 0.3;
     const isBluffing = rand < 0.12;
     const isSlowPlaying = rand < 0.12;
-
     if (callAmount === 0) {
       if (strength > raiseThreshold) return isSlowPlaying ? "check" : "raise";
       if (strength > callThreshold && rand < 0.4) return "raise";
