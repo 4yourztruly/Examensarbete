@@ -51,63 +51,6 @@ export default function StartScreen() {
       >
         Deal Cards
       </button>
-
-      <div className="flex gap-6 text-center">
-        {[
-          {
-            name: "Jack",
-            type: "Aggressive",
-            color: "#ef4444",
-            desc: "Raises often, rarely folds",
-          },
-          {
-            name: "Utopia",
-            type: "Passive",
-            color: "#22c55e",
-            desc: "Only bets strong hands",
-          },
-          {
-            name: "Travis",
-            type: "Adaptive",
-            color: "#a855f7",
-            desc: "Unpredictable — bluffs & slow plays",
-          },
-          {
-            name: "LaFlame",
-            type: "Aggressive",
-            color: "#ef4444",
-            desc: "Raises often, rarely folds",
-          },
-          {
-            name: "Scott",
-            type: "Passive",
-            color: "#22c55e",
-            desc: "Only bets strong hands",
-          },
-        ].map((bot) => (
-          <div key={bot.name} className="flex flex-col items-center gap-1">
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm"
-              style={{
-                background: bot.color + "22",
-                border: `2px solid ${bot.color}`,
-              }}
-            >
-              {bot.name[0]}
-            </div>
-            <span className="text-white text-xs font-bold">{bot.name}</span>
-            <span
-              className="text-xs font-semibold"
-              style={{ color: bot.color }}
-            >
-              {bot.type}
-            </span>
-            <span className="text-gray-500 text-[10px] max-w-20 leading-tight">
-              {bot.desc}
-            </span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

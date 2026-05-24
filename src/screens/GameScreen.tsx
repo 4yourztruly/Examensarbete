@@ -28,12 +28,6 @@ const BET_OFFSETS: Record<
   5: { top: "70px", left: "50%", transform: "translateX(-50%)" },
 };
 
-const ARCHETYPE_COLORS: Record<string, string> = {
-  aggressive: "#ef4444",
-  passive: "#22c55e",
-  adaptive: "#a855f7",
-};
-
 const POT_FRACTIONS = [
   { label: "1/4", fraction: 0.25 },
   { label: "1/3", fraction: 0.33 },
@@ -220,9 +214,6 @@ export default function GameScreen() {
                     allIn={p.allIn}
                     lastAction={p.lastAction}
                     handName={seat.id === 0 ? userHand : ""}
-                    archetypeColor={
-                      p.archetype ? ARCHETYPE_COLORS[p.archetype] : undefined
-                    }
                   />
                 ) : (
                   <div
@@ -410,7 +401,7 @@ export default function GameScreen() {
                   ) : (
                     <Button
                       label={`Call $${callAmount}`}
-                      variant="primary"
+                      variant="gold"
                       onClick={call}
                       disabled={userBroke && callAmount > 0}
                     />
