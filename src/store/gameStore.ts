@@ -17,6 +17,7 @@ import {
   dealTurnOrRiver,
   getBotAction,
   BIG_BLIND,
+  CLOCKWISE,
 } from "../logic/gameFlow";
 
 export interface PendingBet {
@@ -36,6 +37,7 @@ interface GameStore {
   log: string[];
   highScore: number;
   pendingBets: PendingBet[];
+  actionsThisRound: number;
   startGame: () => void;
   returnToMenu: () => void;
   fold: () => void;
@@ -65,24 +67,43 @@ function appendLog(log: string[], msg: string): string[] {
   return [...log.slice(-40), msg];
 }
 
-function nextActive(players: Player[], from: number): number {
-  let idx = (from + 1) % players.length;
-  let tries = 0;
-  while (
-    (players[idx].folded || players[idx].allIn || players[idx].eliminated) &&
-    tries < players.length
-  ) {
-    idx = (idx + 1) % players.length;
-    tries++;
+function nextActiveSeat(players: Player[], fromSeat: number): number {
+  const pos = CLOCKWISE.indexOf(fromSeat);
+  for (let i = 1; i <= CLOCKWISE.length; i++) {
+    const seat = CLOCKWISE[(pos + i) % CLOCKWISE.length];
+    const p = players[seat];
+    if (p && !p.folded && !p.allIn && !p.eliminated) return seat;
   }
-  return idx;
+  return fromSeat;
 }
 
-function bettingComplete(players: Player[]): boolean {
+function firstActiveSeatPostFlop(
+  players: Player[],
+  dealerSeat: number,
+): number {
+  const pos = CLOCKWISE.indexOf(dealerSeat);
+  for (let i = 1; i <= CLOCKWISE.length; i++) {
+    const seat = CLOCKWISE[(pos + i) % CLOCKWISE.length];
+    const p = players[seat];
+    if (p && !p.folded && !p.allIn && !p.eliminated) return seat;
+  }
+  return -1;
+}
+
+function countCanAct(players: Player[]): number {
+  return players.filter((p) => !p.folded && !p.allIn && !p.eliminated).length;
+}
+
+function isBettingRoundDone(
+  players: Player[],
+  actionsThisRound: number,
+): boolean {
   const highBet = getHighBet(players);
-  return players
-    .filter((p) => !p.folded && !p.allIn && !p.eliminated)
-    .every((p) => p.currentBet === highBet);
+  const canAct = players.filter((p) => !p.folded && !p.allIn && !p.eliminated);
+  return (
+    canAct.every((p) => p.currentBet === highBet) &&
+    actionsThisRound >= canAct.length
+  );
 }
 
 function everyoneAllIn(players: Player[]): boolean {
@@ -90,20 +111,12 @@ function everyoneAllIn(players: Player[]): boolean {
   return active.length > 1 && active.every((p) => p.allIn);
 }
 
-function findFirstActive(players: Player[]): number {
-  for (let i = 0; i < players.length; i++) {
-    if (!players[i].folded && !players[i].allIn && !players[i].eliminated)
-      return i;
-  }
-  return -1;
-}
-
 function clearActions(players: Player[]): Player[] {
   return players.map((p) => ({ ...p, lastAction: null }));
 }
 
-function setAction(players: Player[], idx: number, action: string): Player[] {
-  return players.map((p, i) => (i === idx ? { ...p, lastAction: action } : p));
+function setAction(players: Player[], seat: number, action: string): Player[] {
+  return players.map((p, i) => (i === seat ? { ...p, lastAction: action } : p));
 }
 
 function markEliminated(players: Player[]): Player[] {
@@ -124,18 +137,18 @@ export const useGameStore = create<GameStore>((set, get) => {
     }, 900);
   }
 
-  function scheduleBotAction(idx: number) {
+  function scheduleBotAction(seat: number, actionsThisRound: number) {
     setTimeout(
       () => {
         const state = get();
-        if (state.currentPlayerIndex !== idx) return;
+        if (state.currentPlayerIndex !== seat) return;
         if (state.phase === "idle" || state.phase === "showdown") return;
-        const bot = state.players[idx];
+
+        const bot = state.players[seat];
         if (!bot || bot.isUser || bot.folded || bot.allIn || bot.eliminated)
           return;
 
         const high = getHighBet(state.players);
-        const callAmount = high - bot.currentBet;
         const action = getBotAction(
           bot,
           state.communityCards,
@@ -146,21 +159,22 @@ export const useGameStore = create<GameStore>((set, get) => {
         let updatedPlayers = state.players;
         let newPot = state.pot;
         let msg = "";
+        let newActions = actionsThisRound + 1;
 
         if (action === "fold") {
           updatedPlayers = setAction(
             state.players.map((p, i) =>
-              i === idx ? { ...foldPlayer(p), cards: [] } : p,
+              i === seat ? { ...foldPlayer(p), cards: [] } : p,
             ),
-            idx,
+            seat,
             "fold",
           );
           msg = `${bot.name} folds`;
         } else if (action === "check") {
-          updatedPlayers = setAction(state.players, idx, "check");
+          updatedPlayers = setAction(state.players, seat, "check");
           msg = `${bot.name} checks`;
         } else if (action === "call") {
-          const amount = Math.min(callAmount, bot.balance);
+          const amount = Math.min(high - bot.currentBet, bot.balance);
           const updated = {
             ...bot,
             balance: bot.balance - amount,
@@ -168,8 +182,8 @@ export const useGameStore = create<GameStore>((set, get) => {
             allIn: bot.balance - amount === 0,
           };
           updatedPlayers = setAction(
-            state.players.map((p, i) => (i === idx ? updated : p)),
-            idx,
+            state.players.map((p, i) => (i === seat ? updated : p)),
+            seat,
             updated.allIn ? `all in $${amount}` : `call $${amount}`,
           );
           newPot += amount;
@@ -178,13 +192,14 @@ export const useGameStore = create<GameStore>((set, get) => {
         } else {
           const { player, amount } = raiseBy(bot, high, BIG_BLIND * 2);
           updatedPlayers = setAction(
-            state.players.map((p, i) => (i === idx ? player : p)),
-            idx,
+            state.players.map((p, i) => (i === seat ? player : p)),
+            seat,
             player.allIn ? `all in $${amount}` : `raise $${amount}`,
           );
           newPot += amount;
           flashBet(bot.id, amount);
           msg = `${bot.name} raises $${amount}`;
+          newActions = 1;
         }
 
         set((s) => ({
@@ -194,11 +209,12 @@ export const useGameStore = create<GameStore>((set, get) => {
         }));
         afterAction(
           updatedPlayers,
-          idx,
+          seat,
           state.phase,
           state.communityCards,
           state.deck,
           newPot,
+          newActions,
         );
       },
       700 + Math.random() * 500,
@@ -207,16 +223,15 @@ export const useGameStore = create<GameStore>((set, get) => {
 
   function afterAction(
     players: Player[],
-    actorIdx: number,
+    actorSeat: number,
     phase: GamePhase,
     community: Card[],
     deck: Card[],
     pot: number,
+    actionsThisRound: number,
   ) {
-    const activePlayers = players.filter((p) => !p.folded && !p.eliminated);
-
-    if (activePlayers.filter((p) => !p.folded).length === 1) {
-      const winner = activePlayers.find((p) => !p.folded)!;
+    if (onePlayerLeft(players)) {
+      const winner = players.find((p) => !p.folded && !p.eliminated)!;
       const updated = markEliminated(
         players.map((p) =>
           p.id === winner.id ? { ...p, balance: p.balance + pot } : p,
@@ -235,22 +250,24 @@ export const useGameStore = create<GameStore>((set, get) => {
       return;
     }
 
-    if (everyoneAllIn(players) || bettingComplete(players)) {
-      const firstActive = findFirstActive(players);
-      if (everyoneAllIn(players) || firstActive === -1) {
-        runOutBoard(players, phase, community, deck, pot);
-        return;
-      }
-      advancePhase(players, phase, community, deck, pot);
+    if (everyoneAllIn(players)) {
+      runOutBoard(players, phase, community, deck, pot);
       return;
     }
 
-    const next = nextActive(players, actorIdx);
+    if (isBettingRoundDone(players, actionsThisRound)) {
+      set({ actionsThisRound });
+      setTimeout(() => advancePhase(players, phase, community, deck, pot), 600);
+      return;
+    }
+
+    const next = nextActiveSeat(players, actorSeat);
     set((s) => ({
       currentPlayerIndex: next,
+      actionsThisRound,
       log: appendLog(s.log, `${players[next].name} to act`),
     }));
-    if (!players[next].isUser) scheduleBotAction(next);
+    if (!players[next].isUser) scheduleBotAction(next, actionsThisRound);
   }
 
   function runOutBoard(
@@ -331,10 +348,13 @@ export const useGameStore = create<GameStore>((set, get) => {
     }));
     const ws = determineWinners(revealed, community);
     const share = Math.floor(pot / ws.length);
-    const withWinnings = revealed.map((p) =>
-      ws.some((w) => w.id === p.id) ? { ...p, balance: p.balance + share } : p,
+    const final = markEliminated(
+      revealed.map((p) =>
+        ws.some((w) => w.id === p.id)
+          ? { ...p, balance: p.balance + share }
+          : p,
+      ),
     );
-    const final = markEliminated(withWinnings);
     const hs = saveHighScore(final.find((p) => p.isUser)?.balance ?? 0);
     set((s) => {
       let newLog = s.log;
@@ -364,10 +384,12 @@ export const useGameStore = create<GameStore>((set, get) => {
     pot: number,
   ) {
     const reset = clearActions(resetBets(players));
+    const { dealerIndex } = get();
+    const firstSeat = firstActiveSeatPostFlop(reset, dealerIndex);
+
     if (phase === "preflop") {
       const { cards, remaining } = dealFlop(deck);
-      const firstIdx = findFirstActive(reset);
-      if (firstIdx === -1) {
+      if (firstSeat === -1) {
         runOutBoard(reset, "flop", cards, remaining, pot);
         return;
       }
@@ -376,15 +398,15 @@ export const useGameStore = create<GameStore>((set, get) => {
         communityCards: cards,
         deck: remaining,
         players: reset,
-        currentPlayerIndex: firstIdx,
+        currentPlayerIndex: firstSeat,
+        actionsThisRound: 0,
         log: appendLog(s.log, "--- Flop ---"),
       }));
-      if (!reset[firstIdx].isUser) scheduleBotAction(firstIdx);
+      if (!reset[firstSeat].isUser) scheduleBotAction(firstSeat, 0);
     } else if (phase === "flop") {
       const { card, remaining } = dealTurnOrRiver(deck);
       const newComm = [...community, card];
-      const firstIdx = findFirstActive(reset);
-      if (firstIdx === -1) {
+      if (firstSeat === -1) {
         runOutBoard(reset, "turn", newComm, remaining, pot);
         return;
       }
@@ -393,15 +415,15 @@ export const useGameStore = create<GameStore>((set, get) => {
         communityCards: newComm,
         deck: remaining,
         players: reset,
-        currentPlayerIndex: firstIdx,
+        currentPlayerIndex: firstSeat,
+        actionsThisRound: 0,
         log: appendLog(s.log, "--- Turn ---"),
       }));
-      if (!reset[firstIdx].isUser) scheduleBotAction(firstIdx);
+      if (!reset[firstSeat].isUser) scheduleBotAction(firstSeat, 0);
     } else if (phase === "turn") {
       const { card, remaining } = dealTurnOrRiver(deck);
       const newComm = [...community, card];
-      const firstIdx = findFirstActive(reset);
-      if (firstIdx === -1) {
+      if (firstSeat === -1) {
         runOutBoard(reset, "river", newComm, remaining, pot);
         return;
       }
@@ -410,10 +432,11 @@ export const useGameStore = create<GameStore>((set, get) => {
         communityCards: newComm,
         deck: remaining,
         players: reset,
-        currentPlayerIndex: firstIdx,
+        currentPlayerIndex: firstSeat,
+        actionsThisRound: 0,
         log: appendLog(s.log, "--- River ---"),
       }));
-      if (!reset[firstIdx].isUser) scheduleBotAction(firstIdx);
+      if (!reset[firstSeat].isUser) scheduleBotAction(firstSeat, 0);
     } else if (phase === "river") {
       doShowdown(players, community, pot);
     }
@@ -426,11 +449,12 @@ export const useGameStore = create<GameStore>((set, get) => {
     communityCards: [],
     players: [],
     currentPlayerIndex: 0,
-    dealerIndex: 0,
+    dealerIndex: -1,
     winners: [],
     log: [],
     highScore: loadHighScore(),
     pendingBets: [],
+    actionsThisRound: 0,
 
     returnToMenu: () => {
       const { players: prev, highScore } = get();
@@ -445,10 +469,11 @@ export const useGameStore = create<GameStore>((set, get) => {
         communityCards: [],
         players: [],
         currentPlayerIndex: 0,
-        dealerIndex: 0,
+        dealerIndex: -1,
         winners: [],
         log: [],
         pendingBets: [],
+        actionsThisRound: 0,
       });
     },
 
@@ -462,31 +487,43 @@ export const useGameStore = create<GameStore>((set, get) => {
         prev.length > 0 ? prev.map((p) => p.balance) : undefined;
       const previousEliminated =
         prev.length > 0 ? prev.map((p) => p.eliminated) : undefined;
-      const {
-        players,
-        deck,
-        pot,
-        dealerIndex: newDealer,
-        firstToActIndex,
-      } = setupNewHand(previousBalances, dealerIndex, previousEliminated);
+
+      const { players, deck, pot, dealerSeat, sbSeat, bbSeat, utgSeat } =
+        setupNewHand(previousBalances, dealerIndex, previousEliminated);
+
       set({
         phase: "preflop",
         pot,
         deck,
         players,
         communityCards: [],
-        currentPlayerIndex: firstToActIndex,
-        dealerIndex: newDealer,
+        currentPlayerIndex: utgSeat,
+        dealerIndex: dealerSeat,
         winners: [],
-        log: [`--- New Hand ---`, `${players[newDealer].name} is dealer`],
+        actionsThisRound: 0,
+        log: [
+          `--- New Hand ---`,
+          `${players[dealerSeat].name} is dealer`,
+          `${players[sbSeat].name} posts small blind $${players[sbSeat].currentBet}`,
+          `${players[bbSeat].name} posts big blind $${players[bbSeat].currentBet}`,
+          `${players[utgSeat].name} to act`,
+        ],
         pendingBets: [],
       });
-      if (!players[firstToActIndex].isUser) scheduleBotAction(firstToActIndex);
+
+      if (!players[utgSeat].isUser) scheduleBotAction(utgSeat, 0);
     },
 
     fold: () => {
-      const { players, currentPlayerIndex, phase, communityCards, deck, pot } =
-        get();
+      const {
+        players,
+        currentPlayerIndex,
+        phase,
+        communityCards,
+        deck,
+        pot,
+        actionsThisRound,
+      } = get();
       const updated = setAction(
         players.map((p, i) =>
           i === currentPlayerIndex ? { ...foldPlayer(p), cards: [] } : p,
@@ -506,12 +543,20 @@ export const useGameStore = create<GameStore>((set, get) => {
         communityCards,
         deck,
         pot,
+        actionsThisRound + 1,
       );
     },
 
     call: () => {
-      const { players, currentPlayerIndex, phase, communityCards, deck, pot } =
-        get();
+      const {
+        players,
+        currentPlayerIndex,
+        phase,
+        communityCards,
+        deck,
+        pot,
+        actionsThisRound,
+      } = get();
       const user = players[currentPlayerIndex];
       if (user.balance === 0) return;
       const high = getHighBet(players);
@@ -545,6 +590,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         communityCards,
         deck,
         newPot,
+        actionsThisRound + 1,
       );
     },
 
@@ -586,12 +632,20 @@ export const useGameStore = create<GameStore>((set, get) => {
         communityCards,
         deck,
         newPot,
+        1,
       );
     },
 
     check: () => {
-      const { players, currentPlayerIndex, phase, communityCards, deck, pot } =
-        get();
+      const {
+        players,
+        currentPlayerIndex,
+        phase,
+        communityCards,
+        deck,
+        pot,
+        actionsThisRound,
+      } = get();
       const updated = setAction(players, currentPlayerIndex, "check");
       set((s) => ({
         players: updated,
@@ -605,6 +659,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         communityCards,
         deck,
         pot,
+        actionsThisRound + 1,
       );
     },
   };

@@ -1,80 +1,139 @@
 import type { Player, BotArchetype } from "../types/player";
 import type { Card } from "../types/card";
 import { createDeck, shuffleDeck, dealCards } from "./deck";
-import { postBlinds, BIG_BLIND } from "./betting";
+import { BIG_BLIND } from "./betting";
 import { getHandStrength } from "./hand";
+
+export { BIG_BLIND };
+export const SMALL_BLIND = BIG_BLIND / 2; // 25
+
+export const CLOCKWISE: number[] = [0, 1, 3, 5, 4, 2];
+
+function nextClockwise(seatId: number, players: Player[]): number {
+  const pos = CLOCKWISE.indexOf(seatId);
+  for (let i = 1; i <= CLOCKWISE.length; i++) {
+    const next = CLOCKWISE[(pos + i) % CLOCKWISE.length];
+    const p = players[next];
+    if (p && !p.eliminated && !p.folded && !p.allIn) return next;
+  }
+  return seatId;
+}
+
+function nextClockwiseActive(seatId: number, players: Player[]): number {
+  const pos = CLOCKWISE.indexOf(seatId);
+  for (let i = 1; i <= CLOCKWISE.length; i++) {
+    const next = CLOCKWISE[(pos + i) % CLOCKWISE.length];
+    if (players[next] && !players[next].eliminated) return next;
+  }
+  return seatId;
+}
+
+export { nextClockwise };
 
 export function initializePlayers(
   previousBalances?: number[],
   previousEliminated?: boolean[],
 ): Player[] {
-  const base = [
+  return [
     {
       id: 0,
       name: "You",
       isUser: true,
       archetype: undefined,
-      eliminated: false,
+      eliminated: previousEliminated?.[0] ?? false,
+      balance: previousBalances?.[0] ?? 1000,
+      cards: [],
+      currentBet: 0,
+      folded: false,
+      isDealer: false,
+      allIn: false,
+      lastAction: null,
     },
     {
       id: 1,
-      name: "Jack",
+      name: "Utopia",
       isUser: false,
       archetype: "aggressive" as BotArchetype,
-      eliminated: false,
+      eliminated: previousEliminated?.[1] ?? false,
+      balance: previousBalances?.[1] ?? 1000,
+      cards: [],
+      currentBet: 0,
+      folded: false,
+      isDealer: false,
+      allIn: false,
+      lastAction: null,
     },
     {
       id: 2,
-      name: "Utopia",
+      name: "Jack",
       isUser: false,
       archetype: "passive" as BotArchetype,
-      eliminated: false,
+      eliminated: previousEliminated?.[2] ?? false,
+      balance: previousBalances?.[2] ?? 1000,
+      cards: [],
+      currentBet: 0,
+      folded: false,
+      isDealer: false,
+      allIn: false,
+      lastAction: null,
     },
     {
       id: 3,
       name: "Travis",
       isUser: false,
       archetype: "adaptive" as BotArchetype,
-      eliminated: false,
+      eliminated: previousEliminated?.[3] ?? false,
+      balance: previousBalances?.[3] ?? 1000,
+      cards: [],
+      currentBet: 0,
+      folded: false,
+      isDealer: false,
+      allIn: false,
+      lastAction: null,
     },
     {
       id: 4,
       name: "LaFlame",
       isUser: false,
       archetype: "aggressive" as BotArchetype,
-      eliminated: false,
+      eliminated: previousEliminated?.[4] ?? false,
+      balance: previousBalances?.[4] ?? 1000,
+      cards: [],
+      currentBet: 0,
+      folded: false,
+      isDealer: false,
+      allIn: false,
+      lastAction: null,
     },
     {
       id: 5,
       name: "Scott",
       isUser: false,
       archetype: "passive" as BotArchetype,
-      eliminated: false,
+      eliminated: previousEliminated?.[5] ?? false,
+      balance: previousBalances?.[5] ?? 1000,
+      cards: [],
+      currentBet: 0,
+      folded: false,
+      isDealer: false,
+      allIn: false,
+      lastAction: null,
     },
   ];
-  return base.map((b, i) => ({
-    ...b,
-    balance: previousBalances?.[i] ?? 1000,
-    eliminated: previousEliminated?.[i] ?? false,
-    cards: [],
-    currentBet: 0,
-    folded: false,
-    isDealer: false,
-    allIn: false,
-    lastAction: null,
-  }));
 }
 
 export function setupNewHand(
   previousBalances: number[] | undefined,
-  previousDealerIndex: number,
+  previousDealerSeat: number,
   previousEliminated?: boolean[],
 ): {
   players: Player[];
   deck: Card[];
   pot: number;
-  dealerIndex: number;
-  firstToActIndex: number;
+  dealerSeat: number;
+  sbSeat: number;
+  bbSeat: number;
+  utgSeat: number;
 } {
   const deck = shuffleDeck(createDeck());
   let players = initializePlayers(previousBalances, previousEliminated);
@@ -84,53 +143,72 @@ export function setupNewHand(
     eliminated: !p.isUser && p.balance <= 0,
   }));
 
-  let dealerIndex = (previousDealerIndex + 1) % players.length;
-  let tries = 0;
-  while (players[dealerIndex].eliminated && tries < players.length) {
-    dealerIndex = (dealerIndex + 1) % players.length;
-    tries++;
+  const prevPos =
+    previousDealerSeat === -1
+      ? CLOCKWISE.length - 1
+      : CLOCKWISE.indexOf(previousDealerSeat);
+  let dealerSeat = -1;
+  for (let i = 1; i <= CLOCKWISE.length; i++) {
+    const seat = CLOCKWISE[(prevPos + i) % CLOCKWISE.length];
+    if (!players[seat].eliminated) {
+      dealerSeat = seat;
+      break;
+    }
   }
-  players = players.map((p, i) => ({ ...p, isDealer: i === dealerIndex }));
+  if (dealerSeat === -1) dealerSeat = 0;
+
+  const sbSeat = nextClockwiseActive(dealerSeat, players);
+
+  const bbSeat = nextClockwiseActive(sbSeat, players);
+
+  const utgSeat = nextClockwiseActive(bbSeat, players);
+
+  players = players.map((p, i) => ({ ...p, isDealer: i === dealerSeat }));
 
   let remaining = deck;
-  players = players.map((p) => {
-    if (p.eliminated) return p;
+  const dealOrder = [...CLOCKWISE, ...CLOCKWISE]; // double for wrap-around
+  const startDealPos = CLOCKWISE.indexOf(utgSeat);
+  const dealSeats: number[] = [];
+  for (let i = 0; i < CLOCKWISE.length; i++) {
+    const seat = CLOCKWISE[(startDealPos + i) % CLOCKWISE.length];
+    if (!players[seat].eliminated) dealSeats.push(seat);
+  }
+  for (const seat of dealSeats) {
     const { cards, remaining: rest } = dealCards(remaining, 2);
     remaining = rest;
-    return { ...p, cards: cards.map((c) => ({ ...c, faceUp: p.isUser })) };
-  });
-
-  const activePlayers = players.filter((p) => !p.eliminated);
-  const dealerActiveIdx = activePlayers.findIndex(
-    (p) => p.id === players[dealerIndex].id,
-  );
-  const sbActive = activePlayers[(dealerActiveIdx + 1) % activePlayers.length];
-  const bbActive = activePlayers[(dealerActiveIdx + 2) % activePlayers.length];
+    players = players.map((p, i) =>
+      i === seat
+        ? { ...p, cards: cards.map((c) => ({ ...c, faceUp: p.isUser })) }
+        : p,
+    );
+  }
 
   let pot = 0;
-  players = players.map((p) => {
-    if (p.id === sbActive.id) {
-      const blind = Math.min(BIG_BLIND / 2, p.balance);
-      pot += blind;
-      return { ...p, balance: p.balance - blind, currentBet: blind };
+  players = players.map((p, i) => {
+    if (i === sbSeat) {
+      const amount = Math.min(SMALL_BLIND, p.balance);
+      pot += amount;
+      return {
+        ...p,
+        balance: p.balance - amount,
+        currentBet: amount,
+        lastAction: `blind $${amount}`,
+      };
     }
-    if (p.id === bbActive.id) {
-      const blind = Math.min(BIG_BLIND, p.balance);
-      pot += blind;
-      return { ...p, balance: p.balance - blind, currentBet: blind };
+    if (i === bbSeat) {
+      const amount = Math.min(BIG_BLIND, p.balance);
+      pot += amount;
+      return {
+        ...p,
+        balance: p.balance - amount,
+        currentBet: amount,
+        lastAction: `blind $${amount}`,
+      };
     }
     return p;
   });
 
-  const bbPlayerIdx = players.findIndex((p) => p.id === bbActive.id);
-  let firstToActIndex = (bbPlayerIdx + 1) % players.length;
-  tries = 0;
-  while (players[firstToActIndex].eliminated && tries < players.length) {
-    firstToActIndex = (firstToActIndex + 1) % players.length;
-    tries++;
-  }
-
-  return { players, deck: remaining, pot, dealerIndex, firstToActIndex };
+  return { players, deck: remaining, pot, dealerSeat, sbSeat, bbSeat, utgSeat };
 }
 
 export function dealFlop(deck: Card[]): { cards: Card[]; remaining: Card[] } {
@@ -201,5 +279,3 @@ export function getBotAction(
 
   return "fold";
 }
-
-export { BIG_BLIND };
