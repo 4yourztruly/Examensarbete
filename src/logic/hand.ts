@@ -104,13 +104,22 @@ export function getHandStrength(
   communityCards: Card[],
 ): number {
   if (communityCards.length === 0) {
-    const vals = holeCards.map((c) => RANK_VALUES[c.rank]);
-    const high = Math.max(...vals);
-    const isPair = vals[0] === vals[1];
+    const vals = holeCards.map((c) => RANK_VALUES[c.rank]).sort((a, b) => b - a);
+    const [high, low] = vals;
+    const gap = high - low;
+    const isPair = high === low;
     const isSuited = holeCards[0].suit === holeCards[1].suit;
-    let score = high / 14;
-    if (isPair) score += 0.3;
-    if (isSuited) score += 0.1;
+
+    if (isPair) return Math.min(0.55 + (high / 14) * 0.42, 1);
+
+    let score = (high / 14) * 0.45 + (low / 14) * 0.25;
+    if (isSuited) score += 0.08;
+    if (gap <= 1) score += 0.07;
+    else if (gap === 2) score += 0.04;
+    else if (gap === 3) score += 0.02;
+    if (high >= 11 && low >= 10) score += 0.08;
+    if (high === 14) score += 0.05;
+
     return Math.min(score, 1);
   }
   const { score } = evaluateHand(holeCards, communityCards);

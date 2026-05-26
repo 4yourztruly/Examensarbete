@@ -1,4 +1,4 @@
-type ChipValue = 1 | 5 | 10 | 25 | 50 | 100 | 500 | 1000;
+import { breakIntoChips, type ChipValue } from "../logic/chips";
 
 interface ChipConfig {
   main: string;
@@ -67,19 +67,6 @@ const CHIP_CONFIG: Record<ChipValue, ChipConfig> = {
   },
 };
 
-function breakIntoChips(amount: number): Partial<Record<ChipValue, number>> {
-  const denoms: ChipValue[] = [1000, 500, 100, 50, 25, 10, 5, 1];
-  const result: Partial<Record<ChipValue, number>> = {};
-  let remaining = amount;
-  for (const d of denoms) {
-    if (remaining >= d) {
-      result[d] = Math.floor(remaining / d);
-      remaining = remaining % d;
-    }
-  }
-  return result;
-}
-
 function ChipFace({ value, size = 48 }: { value: ChipValue; size?: number }) {
   const { main, dark, light, text, label } = CHIP_CONFIG[value];
   const r = size / 2;
@@ -89,7 +76,6 @@ function ChipFace({ value, size = 48 }: { value: ChipValue; size?: number }) {
   const notchSize = size * 0.07;
   const notchCount = 8;
   const fontSize = size * (label.length > 2 ? 0.22 : 0.26);
-
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <circle cx={r} cy={r} r={r - 1} fill={dark} />
@@ -107,7 +93,7 @@ function ChipFace({ value, size = 48 }: { value: ChipValue; size?: number }) {
             height={notchSize}
             fill={light}
             rx={notchSize * 0.2}
-            transform={`rotate(${(i / notchCount) * 360}, ${x}, ${y})`}
+            transform={`rotate(${(i / notchCount) * 360},${x},${y})`}
             opacity={0.9}
           />
         );
@@ -138,153 +124,45 @@ function ChipFace({ value, size = 48 }: { value: ChipValue; size?: number }) {
   );
 }
 
-function ChipSideSlice({
+function ChipColumn({
   value,
-  width,
-  height,
+  count,
+  size = 1,
 }: {
   value: ChipValue;
-  width: number;
-  height: number;
+  count: number;
+  size?: number;
 }) {
-  const { main, dark, light } = CHIP_CONFIG[value];
-  const cx = width / 2;
-  const stripeW = width * 0.14;
-  const stripeGap = width * 0.14;
-
-  return (
-    <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      style={{ display: "block" }}
-    >
-      <rect
-        x={1}
-        y={0}
-        width={width - 2}
-        height={height}
-        fill={dark}
-        rx={1.5}
-      />
-
-      <rect
-        x={2}
-        y={0.5}
-        width={width - 4}
-        height={height - 1}
-        fill={main}
-        rx={1}
-      />
-
-      <rect
-        x={cx - stripeGap - stripeW}
-        y={1}
-        width={stripeW}
-        height={height - 2}
-        fill={light}
-        opacity={0.9}
-        rx={0.5}
-      />
-
-      <rect
-        x={cx + stripeGap}
-        y={1}
-        width={stripeW}
-        height={height - 2}
-        fill={light}
-        opacity={0.9}
-        rx={0.5}
-      />
-
-      <rect
-        x={2}
-        y={0.5}
-        width={width - 4}
-        height={1.5}
-        fill="rgba(255,255,255,0.4)"
-        rx={1}
-      />
-
-      <rect
-        x={2}
-        y={height - 2}
-        width={width - 4}
-        height={1.5}
-        fill="rgba(0,0,0,0.35)"
-        rx={1}
-      />
-    </svg>
-  );
-}
-
-function ChipColumn({ value, count }: { value: ChipValue; count: number }) {
-  const chips = Math.min(count, 20);
-  const chipH = 11;
-  const chipW = 52;
-  const faceSize = chipW;
-  const stackH = chips * chipH;
-  const totalH = stackH + faceSize - 8;
+  const chips = Math.min(4, Math.max(1, Math.ceil(Math.log2(count + 1))));
+  const chipSize = Math.round(28 * size);
+  const xStep = Math.round(3 * size);
+  const yStep = Math.round(3 * size);
+  const width = chipSize + xStep * (chips - 1);
+  const height = chipSize + yStep * (chips - 1);
 
   return (
     <div
-      className="flex flex-col items-center"
-      style={{ width: `${chipW + 4}px` }}
+      className="relative"
+      style={{ width: `${width}px`, height: `${height}px` }}
     >
-      <div
-        style={{
-          position: "relative",
-          width: `${chipW}px`,
-          height: `${totalH}px`,
-        }}
-      >
-        <div
-          style={{ position: "absolute", top: 0, left: 0, zIndex: chips + 2 }}
-        >
-          <ChipFace value={value} size={faceSize} />
-        </div>
-
-        <div
-          style={{
-            position: "absolute",
-            top: faceSize - 8,
-            left: 0,
-            width: `${chipW}px`,
-            zIndex: 1,
-            boxShadow: "0 8px 16px rgba(0,0,0,0.6)",
-            borderRadius: "0 0 3px 3px",
-          }}
-        >
-          {[...Array(chips)].map((_, i) => (
-            <ChipSideSlice key={i} value={value} width={chipW} height={chipH} />
-          ))}
+      {[...Array(chips)].map((_, i) => {
+        const layer = chips - i - 1;
+        return (
           <div
+            key={i}
+            className="absolute"
             style={{
-              width: `${chipW}px`,
-              height: "5px",
-              background: CHIP_CONFIG[value].dark,
-              borderRadius: "0 0 4px 4px",
-              filter: "brightness(0.6)",
+              left: `${layer * xStep}px`,
+              top: `${i * yStep}px`,
+              zIndex: i,
+              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.55))",
+              transform: `rotate(${-10 + i * 4}deg)`,
             }}
-          />
-        </div>
-      </div>
-
-      <div
-        style={{
-          marginTop: "4px",
-          fontSize: "10px",
-          fontWeight: 700,
-          color: CHIP_CONFIG[value].light,
-          textShadow: "0 1px 3px rgba(0,0,0,0.9)",
-          background: "rgba(0,0,0,0.45)",
-          borderRadius: "4px",
-          padding: "1px 6px",
-          letterSpacing: "0.5px",
-        }}
-      >
-        x{count}
-      </div>
+          >
+            <ChipFace value={value} size={chipSize} />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -301,20 +179,15 @@ function ChipPile({ chips }: { chips: Partial<Record<ChipValue, number>> }) {
     { x: 30, y: 30, r: -12 },
     { x: 18, y: 40, r: 18 },
   ];
-
   let posIndex = 0;
   const allChips: { value: ChipValue; pos: (typeof positions)[0] }[] = [];
-
   for (const [val, count] of entries) {
     const chipVal = Number(val) as ChipValue;
-    const shown = Math.min(count, 2);
-    for (let i = 0; i < shown; i++) {
-      if (posIndex < positions.length) {
+    for (let i = 0; i < Math.min(count, 2); i++) {
+      if (posIndex < positions.length)
         allChips.push({ value: chipVal, pos: positions[posIndex++] });
-      }
     }
   }
-
   return (
     <div className="relative" style={{ width: "72px", height: "80px" }}>
       {allChips.map((c, i) => (
@@ -336,20 +209,34 @@ function ChipPile({ chips }: { chips: Partial<Record<ChipValue, number>> }) {
   );
 }
 
-function PlayerStack({ balance }: { balance: number }) {
+function PlayerStack({
+  balance,
+  size = 1,
+}: {
+  balance: number;
+  size?: number;
+}) {
   const chips = breakIntoChips(balance);
   const entries = (Object.entries(chips) as [string, number][]).filter(
     ([, count]) => count > 0,
   );
-
-  if (entries.length === 0) {
+  if (entries.length === 0)
     return <p style={{ color: "#9ca3af", fontSize: "12px" }}>No chips</p>;
-  }
-
   return (
-    <div className="flex items-end gap-3" style={{ padding: "4px 8px" }}>
-      {entries.map(([val, count]) => (
-        <ChipColumn key={val} value={Number(val) as ChipValue} count={count} />
+    <div className="flex items-end" style={{ padding: "1px 0" }}>
+      {entries.map(([val, count], index) => (
+        <div
+          key={val}
+          style={{
+            marginLeft: index === 0 ? 0 : `${Math.round(-8 * size)}px`,
+          }}
+        >
+          <ChipColumn
+            value={Number(val) as ChipValue}
+            count={count}
+            size={size}
+          />
+        </div>
       ))}
     </div>
   );
@@ -359,13 +246,19 @@ interface ChipProps {
   variant: "pile" | "stack";
   balance?: number;
   chips?: Partial<Record<ChipValue, number>>;
+  size?: number;
 }
 
-export default function Chip({ variant, balance = 0, chips }: ChipProps) {
-  if (variant === "stack") return <PlayerStack balance={balance} />;
+export default function Chip({
+  variant,
+  balance = 0,
+  chips,
+  size = 1,
+}: ChipProps) {
+  if (variant === "stack") return <PlayerStack balance={balance} size={size} />;
   const pileChips = chips ?? breakIntoChips(balance);
   return <ChipPile chips={pileChips} />;
 }
 
-export { ChipFace, ChipColumn, ChipPile, PlayerStack, breakIntoChips };
+export { ChipFace, ChipColumn, ChipPile, PlayerStack };
 export type { ChipValue };
