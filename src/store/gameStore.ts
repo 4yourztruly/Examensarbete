@@ -33,11 +33,13 @@ interface GameStore {
   players: Player[];
   currentPlayerIndex: number;
   dealerIndex: number;
+  bbSeat: number;
   winners: Player[];
   log: string[];
   highScore: number;
   pendingBets: PendingBet[];
   actionsThisRound: number;
+  raiseCount: number;
   startGame: () => void;
   returnToMenu: () => void;
   fold: () => void;
@@ -90,10 +92,6 @@ function firstActiveSeatPostFlop(
   return -1;
 }
 
-function countCanAct(players: Player[]): number {
-  return players.filter((p) => !p.folded && !p.allIn && !p.eliminated).length;
-}
-
 function isBettingRoundDone(
   players: Player[],
   actionsThisRound: number,
@@ -137,7 +135,11 @@ export const useGameStore = create<GameStore>((set, get) => {
     }, 900);
   }
 
-  function scheduleBotAction(seat: number, actionsThisRound: number) {
+  function scheduleBotAction(
+    seat: number,
+    actionsThisRound: number,
+    raiseCount: number,
+  ) {
     setTimeout(
       () => {
         const state = get();
@@ -149,17 +151,21 @@ export const useGameStore = create<GameStore>((set, get) => {
           return;
 
         const high = getHighBet(state.players);
+        const isBigBlind = seat === state.bbSeat && state.phase === "preflop";
         const action = getBotAction(
           bot,
           state.communityCards,
           high,
           bot.archetype ?? "passive",
+          raiseCount,
+          isBigBlind,
         );
 
         let updatedPlayers = state.players;
         let newPot = state.pot;
         let msg = "";
         let newActions = actionsThisRound + 1;
+        let newRaiseCount = raiseCount;
 
         if (action === "fold") {
           updatedPlayers = setAction(
@@ -190,6 +196,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           flashBet(bot.id, amount);
           msg = `${bot.name} ${updated.allIn ? "all in" : "calls"} $${amount}`;
         } else {
+          // raise
           const { player, amount } = raiseBy(bot, high, BIG_BLIND * 2);
           updatedPlayers = setAction(
             state.players.map((p, i) => (i === seat ? player : p)),
@@ -200,11 +207,13 @@ export const useGameStore = create<GameStore>((set, get) => {
           flashBet(bot.id, amount);
           msg = `${bot.name} raises $${amount}`;
           newActions = 1;
+          newRaiseCount = raiseCount + 1;
         }
 
         set((s) => ({
           players: updatedPlayers,
           pot: newPot,
+          raiseCount: newRaiseCount,
           log: appendLog(s.log, msg),
         }));
         afterAction(
@@ -215,6 +224,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           state.deck,
           newPot,
           newActions,
+          newRaiseCount,
         );
       },
       700 + Math.random() * 500,
@@ -229,6 +239,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     deck: Card[],
     pot: number,
     actionsThisRound: number,
+    raiseCount: number,
   ) {
     if (onePlayerLeft(players)) {
       const winner = players.find((p) => !p.folded && !p.eliminated)!;
@@ -265,9 +276,11 @@ export const useGameStore = create<GameStore>((set, get) => {
     set((s) => ({
       currentPlayerIndex: next,
       actionsThisRound,
+      raiseCount,
       log: appendLog(s.log, `${players[next].name} to act`),
     }));
-    if (!players[next].isUser) scheduleBotAction(next, actionsThisRound);
+    if (!players[next].isUser)
+      scheduleBotAction(next, actionsThisRound, raiseCount);
   }
 
   function runOutBoard(
@@ -400,9 +413,10 @@ export const useGameStore = create<GameStore>((set, get) => {
         players: reset,
         currentPlayerIndex: firstSeat,
         actionsThisRound: 0,
+        raiseCount: 0,
         log: appendLog(s.log, "--- Flop ---"),
       }));
-      if (!reset[firstSeat].isUser) scheduleBotAction(firstSeat, 0);
+      if (!reset[firstSeat].isUser) scheduleBotAction(firstSeat, 0, 0);
     } else if (phase === "flop") {
       const { card, remaining } = dealTurnOrRiver(deck);
       const newComm = [...community, card];
@@ -417,9 +431,10 @@ export const useGameStore = create<GameStore>((set, get) => {
         players: reset,
         currentPlayerIndex: firstSeat,
         actionsThisRound: 0,
+        raiseCount: 0,
         log: appendLog(s.log, "--- Turn ---"),
       }));
-      if (!reset[firstSeat].isUser) scheduleBotAction(firstSeat, 0);
+      if (!reset[firstSeat].isUser) scheduleBotAction(firstSeat, 0, 0);
     } else if (phase === "turn") {
       const { card, remaining } = dealTurnOrRiver(deck);
       const newComm = [...community, card];
@@ -434,9 +449,10 @@ export const useGameStore = create<GameStore>((set, get) => {
         players: reset,
         currentPlayerIndex: firstSeat,
         actionsThisRound: 0,
+        raiseCount: 0,
         log: appendLog(s.log, "--- River ---"),
       }));
-      if (!reset[firstSeat].isUser) scheduleBotAction(firstSeat, 0);
+      if (!reset[firstSeat].isUser) scheduleBotAction(firstSeat, 0, 0);
     } else if (phase === "river") {
       doShowdown(players, community, pot);
     }
@@ -450,11 +466,13 @@ export const useGameStore = create<GameStore>((set, get) => {
     players: [],
     currentPlayerIndex: 0,
     dealerIndex: -1,
+    bbSeat: -1,
     winners: [],
     log: [],
     highScore: loadHighScore(),
     pendingBets: [],
     actionsThisRound: 0,
+    raiseCount: 0,
 
     returnToMenu: () => {
       const { players: prev, highScore } = get();
@@ -470,10 +488,12 @@ export const useGameStore = create<GameStore>((set, get) => {
         players: [],
         currentPlayerIndex: 0,
         dealerIndex: -1,
+        bbSeat: -1,
         winners: [],
         log: [],
         pendingBets: [],
         actionsThisRound: 0,
+        raiseCount: 0,
       });
     },
 
@@ -499,8 +519,10 @@ export const useGameStore = create<GameStore>((set, get) => {
         communityCards: [],
         currentPlayerIndex: utgSeat,
         dealerIndex: dealerSeat,
+        bbSeat,
         winners: [],
         actionsThisRound: 0,
+        raiseCount: 0,
         log: [
           `--- New Hand ---`,
           `${players[dealerSeat].name} is dealer`,
@@ -511,7 +533,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         pendingBets: [],
       });
 
-      if (!players[utgSeat].isUser) scheduleBotAction(utgSeat, 0);
+      if (!players[utgSeat].isUser) scheduleBotAction(utgSeat, 0, 0);
     },
 
     fold: () => {
@@ -523,6 +545,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         deck,
         pot,
         actionsThisRound,
+        raiseCount,
       } = get();
       const updated = setAction(
         players.map((p, i) =>
@@ -544,6 +567,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         deck,
         pot,
         actionsThisRound + 1,
+        raiseCount,
       );
     },
 
@@ -556,6 +580,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         deck,
         pot,
         actionsThisRound,
+        raiseCount,
       } = get();
       const user = players[currentPlayerIndex];
       if (user.balance === 0) return;
@@ -591,12 +616,20 @@ export const useGameStore = create<GameStore>((set, get) => {
         deck,
         newPot,
         actionsThisRound + 1,
+        raiseCount,
       );
     },
 
     raise: (amount) => {
-      const { players, currentPlayerIndex, phase, communityCards, deck, pot } =
-        get();
+      const {
+        players,
+        currentPlayerIndex,
+        phase,
+        communityCards,
+        deck,
+        pot,
+        raiseCount,
+      } = get();
       const user = players[currentPlayerIndex];
       if (user.balance === 0 || amount <= 0) return;
       const high = getHighBet(players);
@@ -618,11 +651,13 @@ export const useGameStore = create<GameStore>((set, get) => {
         label,
       );
       const newPot = pot + total;
+      const newRaiseCount = raiseCount + 1;
       flashBet(user.id, total);
       set((s) => ({
         players: updated,
         pot: newPot,
         currentPlayerIndex: -1,
+        raiseCount: newRaiseCount,
         log: appendLog(s.log, `You raise $${raiseAmt}`),
       }));
       afterAction(
@@ -633,6 +668,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         deck,
         newPot,
         1,
+        newRaiseCount,
       );
     },
 
@@ -645,6 +681,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         deck,
         pot,
         actionsThisRound,
+        raiseCount,
       } = get();
       const updated = setAction(players, currentPlayerIndex, "check");
       set((s) => ({
@@ -660,6 +697,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         deck,
         pot,
         actionsThisRound + 1,
+        raiseCount,
       );
     },
   };

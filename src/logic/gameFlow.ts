@@ -5,7 +5,7 @@ import { BIG_BLIND } from "./betting";
 import { getHandStrength } from "./hand";
 
 export { BIG_BLIND };
-export const SMALL_BLIND = BIG_BLIND / 2; // 25
+export const SMALL_BLIND = BIG_BLIND / 2;
 
 export const CLOCKWISE: number[] = [0, 1, 3, 5, 4, 2];
 
@@ -41,7 +41,7 @@ export function initializePlayers(
       isUser: true,
       archetype: undefined,
       eliminated: previousEliminated?.[0] ?? false,
-      balance: previousBalances?.[0] ?? 1000,
+      balance: previousBalances?.[0] ?? 10000,
       cards: [],
       currentBet: 0,
       folded: false,
@@ -55,7 +55,7 @@ export function initializePlayers(
       isUser: false,
       archetype: "aggressive" as BotArchetype,
       eliminated: previousEliminated?.[1] ?? false,
-      balance: previousBalances?.[1] ?? 1000,
+      balance: previousBalances?.[1] ?? 10000,
       cards: [],
       currentBet: 0,
       folded: false,
@@ -69,7 +69,7 @@ export function initializePlayers(
       isUser: false,
       archetype: "passive" as BotArchetype,
       eliminated: previousEliminated?.[2] ?? false,
-      balance: previousBalances?.[2] ?? 1000,
+      balance: previousBalances?.[2] ?? 10000,
       cards: [],
       currentBet: 0,
       folded: false,
@@ -83,7 +83,7 @@ export function initializePlayers(
       isUser: false,
       archetype: "adaptive" as BotArchetype,
       eliminated: previousEliminated?.[3] ?? false,
-      balance: previousBalances?.[3] ?? 1000,
+      balance: previousBalances?.[3] ?? 10000,
       cards: [],
       currentBet: 0,
       folded: false,
@@ -97,7 +97,7 @@ export function initializePlayers(
       isUser: false,
       archetype: "aggressive" as BotArchetype,
       eliminated: previousEliminated?.[4] ?? false,
-      balance: previousBalances?.[4] ?? 1000,
+      balance: previousBalances?.[4] ?? 10000,
       cards: [],
       currentBet: 0,
       folded: false,
@@ -111,7 +111,7 @@ export function initializePlayers(
       isUser: false,
       archetype: "passive" as BotArchetype,
       eliminated: previousEliminated?.[5] ?? false,
-      balance: previousBalances?.[5] ?? 1000,
+      balance: previousBalances?.[5] ?? 10000,
       cards: [],
       currentBet: 0,
       folded: false,
@@ -158,15 +158,12 @@ export function setupNewHand(
   if (dealerSeat === -1) dealerSeat = 0;
 
   const sbSeat = nextClockwiseActive(dealerSeat, players);
-
   const bbSeat = nextClockwiseActive(sbSeat, players);
-
   const utgSeat = nextClockwiseActive(bbSeat, players);
 
   players = players.map((p, i) => ({ ...p, isDealer: i === dealerSeat }));
 
   let remaining = deck;
-  const dealOrder = [...CLOCKWISE, ...CLOCKWISE]; // double for wrap-around
   const startDealPos = CLOCKWISE.indexOf(utgSeat);
   const dealSeats: number[] = [];
   for (let i = 0; i < CLOCKWISE.length; i++) {
@@ -229,52 +226,124 @@ export function getBotAction(
   communityCards: Card[],
   highBet: number,
   archetype: BotArchetype,
+  raiseCount: number,
+  isBigBlind: boolean,
 ): "fold" | "check" | "call" | "raise" {
   const strength = getHandStrength(bot.cards, communityCards);
   const callAmount = highBet - bot.currentBet;
   const isPreflop = communityCards.length === 0;
   const rand = Math.random();
+  const facingReraise = raiseCount >= 2;
+  const facingReReRaise = raiseCount >= 3;
 
-  if (archetype === "passive") {
-    const raiseThreshold = isPreflop ? 0.93 : 0.9;
-    const callThreshold = isPreflop ? 0.88 : 0.83;
-    if (callAmount === 0) return strength > raiseThreshold ? "raise" : "check";
-    if (strength > raiseThreshold) return rand < 0.6 ? "raise" : "call";
-    if (strength > callThreshold) return "call";
-    return "fold";
-  }
-
-  if (archetype === "aggressive") {
-    const raiseThreshold = isPreflop ? 0.6 : 0.55;
-    const callThreshold = isPreflop ? 0.48 : 0.4;
-    const foldThreshold = isPreflop ? 0.35 : 0.25;
-    if (callAmount === 0) {
-      if (strength > raiseThreshold) return "raise";
-      if (strength > callThreshold && rand < 0.45) return "raise";
-      return "check";
+  if (isPreflop) {
+    if (facingReReRaise) {
+      if (strength >= 1.0) return rand < 0.7 ? "raise" : "call";
+      if (strength >= 0.94) return rand < 0.15 ? "call" : "fold";
+      return "fold";
     }
-    if (strength > raiseThreshold) return rand < 0.6 ? "raise" : "call";
-    if (strength > callThreshold) return "call";
-    if (strength > foldThreshold && rand < 0.25) return "call";
-    return "fold";
-  }
 
-  if (archetype === "adaptive") {
-    const raiseThreshold = isPreflop ? 0.72 : 0.67;
-    const callThreshold = isPreflop ? 0.55 : 0.45;
-    const foldThreshold = isPreflop ? 0.4 : 0.3;
-    const isBluffing = rand < 0.12;
-    const isSlowPlaying = rand < 0.12;
-    if (callAmount === 0) {
-      if (strength > raiseThreshold) return isSlowPlaying ? "check" : "raise";
-      if (strength > callThreshold && rand < 0.4) return "raise";
-      if (isBluffing && rand < 0.5) return "raise";
-      return "check";
+    if (facingReraise) {
+      if (strength >= 1.0) return rand < 0.6 ? "raise" : "call";
+      if (strength >= 0.94) return rand < 0.25 ? "call" : "fold";
+      return "fold";
     }
-    if (strength > raiseThreshold) return isSlowPlaying ? "call" : "raise";
-    if (strength > callThreshold) return rand < 0.35 ? "raise" : "call";
-    if (strength > foldThreshold) return rand < 0.25 ? "call" : "fold";
-    return isBluffing ? "call" : "fold";
+
+    if (archetype === "passive") {
+      if (isBigBlind && callAmount === 0) {
+        return strength >= 1.0 ? "raise" : "check";
+      }
+      if (callAmount === 0) {
+        return strength >= 1.0 ? (rand < 0.5 ? "raise" : "check") : "check";
+      }
+      if (strength >= 1.0) return rand < 0.35 ? "raise" : "call";
+      if (strength >= 0.86) return "call";
+      return "fold";
+    }
+
+    if (archetype === "aggressive") {
+      if (isBigBlind && callAmount === 0) {
+        return strength >= 0.94 ? "raise" : "check";
+      }
+      if (callAmount === 0) {
+        if (strength >= 0.94) return rand < 0.65 ? "raise" : "check";
+        return "check";
+      }
+      if (strength >= 1.0) return rand < 0.55 ? "raise" : "call";
+      if (strength >= 0.94) return rand < 0.3 ? "raise" : "call";
+      if (strength >= 0.79) return "call";
+      if (strength >= 0.65) return rand < 0.25 ? "call" : "fold";
+      return "fold";
+    }
+
+    if (archetype === "adaptive") {
+      const bluff = rand < 0.08;
+      if (isBigBlind && callAmount === 0) {
+        if (strength >= 1.0) return rand < 0.45 ? "raise" : "check";
+        if (strength >= 0.94 && rand < 0.4) return "raise";
+        return "check";
+      }
+      if (callAmount === 0) {
+        if (strength >= 1.0) return rand < 0.55 ? "raise" : "check";
+        if (strength >= 0.86 && rand < 0.3) return "raise";
+        if (bluff) return "raise";
+        return "check";
+      }
+      if (strength >= 1.0) return rand < 0.5 ? "raise" : "call";
+      if (strength >= 0.94) return rand < 0.35 ? "raise" : "call";
+      if (strength >= 0.79) return rand < 0.15 ? "raise" : "call";
+      if (strength >= 0.65) return rand < 0.2 ? "call" : "fold";
+      return bluff ? "call" : "fold";
+    }
+  } else {
+    if (facingReReRaise) {
+      if (strength >= 0.56) return rand < 0.6 ? "call" : "raise";
+      if (strength >= 0.44) return rand < 0.3 ? "call" : "fold";
+      return "fold";
+    }
+    if (facingReraise) {
+      if (strength >= 0.44) return rand < 0.55 ? "call" : "raise";
+      if (strength >= 0.33) return rand < 0.35 ? "call" : "fold";
+      return "fold";
+    }
+
+    if (archetype === "passive") {
+      if (callAmount === 0) {
+        if (strength >= 0.33) return rand < 0.55 ? "raise" : "check";
+        if (strength >= 0.22) return rand < 0.3 ? "raise" : "check";
+        return "check";
+      }
+      if (strength >= 0.33) return rand < 0.35 ? "raise" : "call";
+      if (strength >= 0.11) return "call";
+      return rand < 0.15 ? "call" : "fold";
+    }
+
+    if (archetype === "aggressive") {
+      if (callAmount === 0) {
+        if (strength >= 0.22) return rand < 0.8 ? "raise" : "check";
+        if (strength >= 0.11) return rand < 0.55 ? "raise" : "check";
+        return rand < 0.25 ? "raise" : "check";
+      }
+      if (strength >= 0.22) return rand < 0.5 ? "raise" : "call";
+      if (strength >= 0.11) return rand < 0.2 ? "raise" : "call";
+      return rand < 0.2 ? "call" : "fold";
+    }
+
+    if (archetype === "adaptive") {
+      const bluff = rand < 0.12;
+      const slowPlay = strength >= 0.67 && rand < 0.15;
+      if (callAmount === 0) {
+        if (slowPlay) return "check";
+        if (strength >= 0.33) return rand < 0.7 ? "raise" : "check";
+        if (strength >= 0.22) return rand < 0.5 ? "raise" : "check";
+        if (strength >= 0.11) return rand < 0.3 ? "raise" : "check";
+        return bluff ? "raise" : "check";
+      }
+      if (strength >= 0.33) return rand < 0.45 ? "raise" : "call";
+      if (strength >= 0.22) return rand < 0.25 ? "raise" : "call";
+      if (strength >= 0.11) return rand < 0.15 ? "raise" : "call";
+      return bluff ? "call" : "fold";
+    }
   }
 
   return "fold";
