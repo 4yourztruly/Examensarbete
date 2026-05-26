@@ -133,10 +133,10 @@ function setAction(players: Player[], seat: number, action: string): Player[] {
   return players.map((p, i) => (i === seat ? { ...p, lastAction: action } : p));
 }
 
-function markEliminated(players: Player[]): Player[] {
+function revealCards(players: Player[]): Player[] {
   return players.map((p) => ({
     ...p,
-    eliminated: !p.isUser && p.balance <= 0,
+    cards: p.cards.map((c) => ({ ...c, faceUp: true })),
   }));
 }
 
@@ -269,10 +269,8 @@ export const useGameStore = create<GameStore>((set, get) => {
   ) {
     if (onePlayerLeft(players)) {
       const winner = players.find((p) => !p.folded && !p.eliminated)!;
-      const updated = markEliminated(
-        players.map((p) =>
-          p.id === winner.id ? { ...p, balance: p.balance + pot } : p,
-        ),
+      const updated = players.map((p) =>
+        p.id === winner.id ? { ...p, balance: p.balance + pot } : p,
       );
       const hs = saveHighScore(updated.find((p) => p.isUser)?.balance ?? 0);
       set((s) => ({
@@ -287,8 +285,12 @@ export const useGameStore = create<GameStore>((set, get) => {
       return;
     }
 
-    if (everyoneAllIn(players) || noMoreBettingPossible(players)) {
-      runOutBoard(players, phase, community, deck, pot);
+    const allLivePlayersAllIn = everyoneAllIn(players);
+    const shouldRunOutBoard = allLivePlayersAllIn || noMoreBettingPossible(players);
+    if (shouldRunOutBoard) {
+      const runoutPlayers = revealCards(players);
+      set({ players: runoutPlayers });
+      runOutBoard(runoutPlayers, phase, community, deck, pot);
       return;
     }
 
@@ -388,12 +390,10 @@ export const useGameStore = create<GameStore>((set, get) => {
     }));
     const ws = determineWinners(revealed, community);
     const share = Math.floor(pot / ws.length);
-    const final = markEliminated(
-      revealed.map((p) =>
-        ws.some((w) => w.id === p.id)
-          ? { ...p, balance: p.balance + share }
-          : p,
-      ),
+    const final = revealed.map((p) =>
+      ws.some((w) => w.id === p.id)
+        ? { ...p, balance: p.balance + share }
+        : p,
     );
     const hs = saveHighScore(final.find((p) => p.isUser)?.balance ?? 0);
     set((s) => {
