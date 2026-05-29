@@ -1,5 +1,6 @@
+
 [Test the game](https://4yourztruly.github.io/Examensarbete/)
-# Mall för Examensarbete
+# Utveckling av ett pokerspel i React med TypeScript. En jämförelse av spellogik mellan funktionell och objektorienterad struktur.
 
 ## Sammanfattning (Abstract)
 
@@ -32,45 +33,38 @@ _Alfabetisk lista över tekniska termer, förkortningar och begrepp som används
 
 ### 1.1 Bakgrund
 
-Beskriv det problemområde eller den kontext som ditt arbete adresserar:
 
-- **För utvecklingsprojekt:** Tekniska utmaningar, befintliga lösningar och deras begränsningar
-- **För utforskande arbeten:** Kunskapsluckor, tekniska frågeställningar som behöver undersökas
-- **För hybridprojekt:** Kombination av praktiska problem och forskningsbehov
-- Koppling till din LIA-plats (om tillämpligt)
+Moderna webbapplikationer byggs ofta med ramverk som React. Där fokusen ligger på komponentbaserad utveckling och hantering av tillstånd. Samtidigt används objektorienterad programmering, exempelvis i Java, för att strukturera komplex logik genom klasser och arv. Spelutveckling innebär hantering av komplex logik som regler, turordning ai beslut osv. Detta gör det ett bra område för att jämföra olika sätt att utveckla.
 
 ### 1.2 Syfte
 
-Formulera det övergripande syftet i 1-3 meningar:
 
-_"Syftet med detta examensarbete är att..."_
+Syftet är att undersöka hur spellogik kan implementeras i React samt jämföra detta med en objektorienterad struktur för att förstå styrkor och svagheter i respektive metod.
 
 ### 1.3 Frågeställningar
 
-Formulera 3-5 konkreta frågeställningar. Exempel:
-
-- **Utforskande:** "Vilka säkerhetsrisker finns med olika autentiseringsmetoder?"
-- **Jämförande:** "Vilka prestanda-skillnader finns mellan X och Y?"
-- **Utvecklande:** "Hur kan man implementera Z för att lösa problem W?"
-- **Evaluerande:** "Hur påverkar olika databassystem användarupplevelsen?"
+1. Hur kan spellogik för Texas Hold'em Poker, såsom handvärdering, turordning och satsningsrundor, implementeras i en funktionell struktur med React och TypeScript?
+2. Hur kan ett reaktivt tillståndshanteringssystem med Zustand användas för att hantera spelstatus i realtid i ett webbaserat pokerspel?
+3. Vilka skillnader finns i hur spellogik struktureras mellan en funktionell approach i TypeScript och en objektorienterad approach i Java?
+4. Hur skiljer sig hanteringen av tillstånd och dataflöde åt mellan Zustand i React och ett klassbaserat system i Java när det gäller komplexitet och underhållbarhet?
+5. Vilka styrkor och svagheter uppvisar funktionell programmering kontra objektorienterad programmering när det gäller separation of concerns i ett spelprojekt?
 
 ### 1.4 Avgränsningar
 
-Definiera tydligt vad arbetet INTE omfattar:
+Spelet kommer inte inkludera följande:
+- Multiplayer funktionalitet
+- Avancerad AI för bots
+- Backend eller databas
 
-- Tekniska begränsningar
-- Omfattning av undersökning/utveckling
-- Målgrupp och användningsområden
-- Teoretiska eller praktiska begränsningar
+Jämförelsen kommer inte inkludera följande:
+- Fördjupning av objekt orienterad programmerings koncept
+
+
+
 
 ### 1.5 Metodöversikt
 
-Kort beskrivning av din approach:
-
-- **Teoretisk studie:** Litteraturstudier, jämförande analys
-- **Experimentell:** Praktiska test, mätningar, prototyping
-- **Utveckling:** Systemutveckling, implementation
-- **Kombinerad:** Mix av ovanstående
+Arbetet kommer bestå av två delar, projektbygget av pokerspelet och jämförelsen mellan funktionell utveckling och OOP utveckling. Under utvecklingen kommer agil utveckling användas.
 
 ---
 
@@ -78,29 +72,27 @@ Kort beskrivning av din approach:
 
 ### 2.1 Tekniska Koncept
 
-Förklara viktiga koncept inom ditt område:
+### React
+React är ett JavaScript-bibliotek utvecklat av FaceBook för att bygga användargränssnitt genom komponentbaserad utveckling. React använder ett deklarativt arbetssätt där användargränssnittet uppdateras automatiskt baserat på förändringar i applikationens tillstånd.
 
-- Grundläggande tekniska begrepp
-- Relevanta programmeringsspråk/teknologier
-- Arkitekturella mönster eller teorier
+### TypeScript
+TypeScript är en vidareutveckling av JavaScript som introducerar statisk typning. Detta gör det möjligt att upptäcka fel tidigare under utvecklingen och förbättrar kodens läsbarhet och underhållbarhet, särskilt i större projekt.
+
+### Funktionell programmering
+Funktionell programmering bygger på användning av rena funktioner och immutabel data. I React används ofta funktionella komponenter och separata hjälpfunktioner för att hantera logik och tillstånd.
+
+### Objektorienterad programmering
+Objektorienterad programmering (OOP) är ett programmeringsparadigm där data och beteenden organiseras i objekt och klasser. Centrala koncept inom OOP inkluderar inkapsling, arv och polymorfism.
+
+### Zustand
+Zustand är ett bibliotek för state management i React-applikationer. Biblioteket används för att lagra och hantera global speldata såsom spelarstatus, marker, satsningar och aktuella rundor.
+
+### Texas Hold'em Poker
+Texas Hold’em är en variant av poker där varje spelare får två privata kort och delar fem gemensamma kort på bordet. Spelet innehåller flera satsningsrundor och kräver logik för handvärdering, potthantering och turordning.
 
 ### 2.2 Befintlig Forskning och Lösningar
 
-**För utforskande arbeten:**
-
-- Tidigare studier och forskning
-- Befintliga teorier och modeller
-- Identifierade kunskapsluckor
-
-**För utvecklingsprojekt:**
-
-- Liknande applikationer/system
-- Open source-projekt
-- Kommersiella lösningar
-
-**För hybridprojekt:**
-
-- Kombination av forskning och praktiska lösningar
+Det finns många olika webbaserade kortspel och pokerapplikationer som använder moderna frontend-ramverk som React. 
 
 ### 2.3 Teknisk/Teoretisk Jämförelse
 
@@ -118,12 +110,6 @@ _Anpassa detta kapitel efter din typ av arbete:_
 
 Beskriv din systematiska approach:
 
-**För teoretiska studier:**
-
-- Litteratursökning och källkritik
-- Analysmetod
-- Syntes och jämförelse
-
 **För experimentella studier:**
 
 - Experimentdesign
@@ -138,12 +124,6 @@ Beskriv din systematiska approach:
 
 ### 3.2 Verktyg och Tekniker
 
-**För teoretiska studier:**
-
-- Databaser för litteratursökning
-- Analysverktyg
-- Kategoriseringsmetoder
-
 **För praktiska studier:**
 
 - Programmeringsverktyg
@@ -151,12 +131,6 @@ Beskriv din systematiska approach:
 - Utvecklingsmiljöer
 
 ### 3.3 Datainsamling och Analys
-
-**För utforskande arbeten:**
-
-- Sökstrategier
-- Urvalskriterier
-- Analysmetoder
 
 **För experimentella arbeten:**
 
@@ -183,12 +157,6 @@ Beskriv din systematiska approach:
 _Anpassa detta kapitel efter din typ av arbete:_
 
 ### 4.1 Huvudresultat
-
-**För teoretiska studier:**
-
-- Sammanställning av litteraturfynd
-- Identifierade mönster och trender
-- Jämförelse mellan olika källor/teorier
 
 **För experimentella studier:**
 
