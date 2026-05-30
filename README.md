@@ -92,63 +92,104 @@ Texas Hold’em är en variant av poker där varje spelare får två privata kor
 
 ### 2.2 Befintlig Forskning och Lösningar
 
-Det finns många olika webbaserade kortspel och pokerapplikationer som använder moderna frontend-ramverk som React. 
+Det finns många olika webbaserade kortspel och pokerapplikationer som använder moderna frontend-ramverk som React. Open source projekt på GitHub visar ofta implementationer av pokerlogik genom både funktionella och objektorienterade lösningar. 
+
+Kommersiella pokerplattformar som Pokerstars och PartyPoker använder vanligtvis klient-server-arkitektur med realtidskommunikation och databashantering. I detta arbetet fokuseras endast frontend-logiken för att analysera hur spellogiken kan struktureras utan backend-komplexitet.
+
+Tidigare forskning inom programmeringsparadigm visar att funktionell programmering ofta används inom frontend-utveckling på grund av dess tydliga dataflöde och enklare state management. Objektorienterad programmering används däremot ofta i större system där komplex logik behöver organiseras i tydliga objektstrukturer. 
 
 ### 2.3 Teknisk/Teoretisk Jämförelse
 
-Analys av olika alternativ eller approaches inom ditt område.
+En funktionell struktur i React bygger vanligtvis på separata funktioner för spellogik, där data skickas mellan funktioner utan att modifieras direkt. Detta kan förbättra testbarhet och minska bieffekter.
 
-_Använd källhänvisningar_
+I en objektorienterad struktur organiseras logiken istället i klasser, exempelvis Player, Deck, Game och HandEvaluator. Detta kan göra systemet mer inuitivt när många objekt med olika beteenden ska hanteras. 
+
+Skillnaden mellan dessa metoder blir särskilt tydligt vid state management. React och Zustand arbetar reaktivt där användargränssnittet uppdateras automatistk vid förändringar i state. Ett klassbaserat Java-system arbetar ofta mer manuellt genom objektinstanser och funktion-anrop. 
 
 ---
 
 ## 3. Metod och Genomförande
 
-_Anpassa detta kapitel efter din typ av arbete:_
-
 ### 3.1 Övergripande Arbetsgång
 
-Beskriv din systematiska approach:
+Under utvecklingen användes agil-utveckling via GitHub Projekts. I GitHub Projects lades issues till för alla steg som skulle göras inom projektet. Några exempel på issues är, skapa skiss för webbsida, skapa projekt skelett och skapa visuella komponenter.
 
-**För experimentella studier:**
+Under utvecklingen så implementerades delar av projektet i ordning av issues. Först skapades en skiss av hur webbsidan skulle se ut, detta innehöll hur själva pokerspelet skulle se ut när man först klickar in på sidan det vill säga en start skärm och hur det ser ut när spelet har startats. Skissen för hur spelet ser ut när den har startat innehöll ett spelarbord, spelarplatser, kort, chips och knappar för användarens val, som satsa, knacka, lägga sig. 
 
-- Experimentdesign
-- Testmiljö och verktyg
-- Mätmetoder
+Sedan skapades projektets skelett, det vill säga alla delar som behövs för att kunna utveckla inom projektet. Detta innebar att skapa projektet, se till att alla filer och verktyg som behövs för att utveckla vidare. Samt struktur på projektet som mappar för komponenter, types och store. Dessutom installerades alla nödvändiga paket och bibliotek som Zustand, TailWind och GitHub Pages. 
 
-**För utvecklingsprojekt:**
+Sedan skapades TypeScript Types för alla relevanta delar. Som kort, spelare, spel (själva pokerspelet) och hand (kombinationen av kort som ger en hand som par, kåk osv). 
 
-- Utvecklingsprocess (agile, iterativ etc.)
-- Design och arkitektur
-- Implementation och testning
+Sedan skapades visuella komponenter som pokerbordet, kort, spelare, knappar och chips. Detta gjordes för att främst kunna göra ett mock spel där man kunde få det se ut som ett poker spel där man senare kan lägga till logik, lite som att göra utsidan och insidan av en bil utan de kritiska delarna som motor och växellåda. 
+
+Sedan skapades de grundläggande funktionerna för pokerspelet. Blanda funktionen, möjligheten att kunna blanda en kortlek. Dela ut funktionen, möjligheten att kunna dela ut två kort till respektiva spelar i spelet. Räkna ut resultat funktionen, möjligheten att lista ut vem som har vunnit spelet i slutet av en runda. Spelarens val funktionen som satsa, knacka och lägga sig.
+
+Efter det skapades det större filerna för projektet, gameStore, gameFlow, GameScreen. GameScreen är det som visas när spelaren spelar spelet. gameFlow är där reglerna är satta, och där logiken med funktioner som dela ut, räkna ut resultat osv är. gameStore är där allt hanteras, den hanterar vilka funktioner som ska kallas från gameFlow och när den ska kallas. Den hanterar states, artificiell tid och hanterar vad som ska visas i GameScreen.
+
+I lite lösa termer kan man kalla GameScreen det som visas på webbsidan, gameFlow är lite som en låtsas backend där gameStore kallar funktioner från gameFlow när det behövs beroende på val användaren gör i GameScreen. 
+
+Medan dessa filer skapades skapades också StartScreen, en mycket mindre fil jämfört med de senaste. Den visar start skärmen där en highscore visas och starta spel visas. Med alla dessa filer kunde man nu lägga till en konstant i App.tsx som bestämmer med hjälp av gameStore vilken av skärmarna som ska visas. Med andra ord så börjar spelaren med StartScreen och när de klickar på starta spelet byts det från StartScreen till GameScreen där spelet nu spelas. 
+
+Med allt detta var det möjligt att testa hela spelet inte bara separata funktioner som dela ut och räkna ut resultat. Men det fanns fortfarande inga bots.
+
+Nu skapades bots till spelet, den skapades i gameFlow där bland annat, det skapades 5 bots, med varierande arketyper, från passiva, aggressiva och adaptiva. All logik för bots fanns också med här, från när de ska satsa, knacka, lägga sig. Vilken grad av händer som bots ska spela/inte spela. 
+
+Nu handlade det mest om att testa spelet för att fixa buggar och för att finslipa ui men också ux. Under denna tiden finslipades många visuella element och flera buggar fixades. Under denna tiden var det mycket ändringar till bots eftersom det agerade väldigt konstigt. Aggressiva bots och passiva bots agerade likadant och var väldigt aggressiva eller väldigt passiva. Bots agerande finslipandes mycket tills de kändes som balancerade i sitt agerande.
+
+Nu var issues i Projects klara det var bara tre kvar, låt en person testa spelet, slutför rapport, redogör presentation.
+
+Det som var näst var låta en person testa spelet. Personen testade spelet utan hjälp från skapare, och gav feedback. Personen tyckte loggen (som ligger under spelaren och loggar spelardrag för bots och spelare) inte var tydlig nog med att förskilja spelare och bots, personen föreslog att ha olika färger på namnen i loggen för att skilja på spelarna. Personen tyckte också att bots var för snabba i sina beslut, föreslog att göra det till mer än en sekund. 
+
+Vid frågor om design tyckte personen det såg bra ut visuellt men tyckte att namnen på spelare kunde ha olika färger för att skilja på dem. Vid frågor om spelbarhet tyckte personen det fungerade bra funktionellt. Vid frågor om bot agerande tyckte personen bots agerade på ett varierat sätt, ibland lägger de sig, ibland går det all in, ibland satsar det lågt. 
 
 ### 3.2 Verktyg och Tekniker
 
-**För praktiska studier:**
+Följande verktyg och tekniker användes:
 
-- Programmeringsverktyg
-- Testverktyg och mätinstrument
-- Utvecklingsmiljöer
+* React
+* TypeScript
+* Tailwind
+* Zustand
+* Vite
+* Git och GitHub
+* GitHub Pages
+* Visual Studio Code
+* Claude free
+* Chat GPT free
+* Codex
+* StackEdit
+
+React användes för användargränssnittet medan TypeScript användes för att skapa tydligare datastrukturer och säkrare kod. Zustand användes för global state management. Tailwind för enklare styling. Vite För enklare setup av projekt. Git och GitHub för versionshantering.
+
+GitHub Pages för att hosta projektet på github för att spela utan att klona repot. Visual Studio Code för utvecklingen av projektet. Claude free användes för att fråga komplexa frågor och få inpiration på olika lösning på problem som tex, bots, räkna ut resultat av hand. Chat GPT användes mest för enkla frågor för att inte slösa på Claude tokens eller när Claude tokens var slut.
+
+Codex agent användes i stutspurten av projektet vid finslipningsdelen av visuella element och bots agerande. Mest som test av verktyget men var användbar vid situationer där det är små ändringar men små ändringar som omfattar flera filer på flera ställen och kräver context över hela projektet för att förstå. Bots är ett bra exempel på ett sådant problem.
+
+StackEdit användes vid skrivandet av rapporten och allting MarkDown relaterat för en enklare online redigerare.
+
+
 
 ### 3.3 Datainsamling och Analys
 
-**För experimentella arbeten:**
+Information samlades in genom dokumentation, tekniska artiklar och analys av existerande projekt. Projektets resultat analyserades genom att jämföra hur samma typ av spellogik skulle kunna struktureras i både funktionell och objektorienterad programmering.
 
-- Experimentuppställning
-- Datainsamlingsmetoder
-- Statistiska metoder
+Fokus låg på:
 
-**För utvecklingsprojekt:**
-
-- Requirements gathering
-- Teststrategier
-- Utvärderingsmetoder
+-   Kodstruktur
+-   Läsbarhet
+-   Underhållbarhet
+-   Separation of concerns
+-   Hantering av state och dataflöde
 
 ### 3.4 Kvalitetssäkring
 
-- Metodkvalitet och tillförlitlighet
-- Validering av resultat
-- Hantering av bias eller fel
+För att säkerställa kvalitet genomfördes kontinuerliga tester under utvecklingen. Funktioner testades individuellt innan de integrerades i spelet.
+
+Versionshantering genom Git användes för att dokumentera förändringar och möjliggöra återställning vid problem. TypeScript hjälpte även till att upptäcka typfel under utvecklingsprocessen.
+
+Claude free användes för att fråga om lösningar var bra och vad som kunde förbättras.
+
+En person testade spelet för att få en objektiv syn på pokerspelet.
 
 ---
 
