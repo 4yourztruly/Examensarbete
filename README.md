@@ -1,6 +1,4 @@
-
 [Test the game](https://4yourztruly.github.io/Examensarbete/)
-
 # Utveckling av ett pokerspel i React med TypeScript. En jämförelse av spellogik mellan funktionell och objektorienterad struktur.
 
 ## Sammanfattning (Abstract)
@@ -15,20 +13,22 @@ The most significant finding was that state management constitutes the primary a
 
 **Keywords:** React, TypeScript, functional programming, object-oriented programming, state management
 
-----------
+---
 
 ## Förkortningar och Begrepp
 
-| Term/Förkortning | Förklaring                                                                             |
-| ---------------- | -------------------------------------------------------------------------------------- |
-| AI           | Artificial Intelligence – Artificiell intelligens, i detta projekt avser det botarnas beslutslogik |
-| FP         | Functional Programming – Funktionell programmering                |
-| MVC            | Model-View-Controller – Arkitekturmönster som separerar datamodell, presentation och styrlogik |
-| OOP           | Object-Oriented Programming – Objektorienterad programmering              |
-| UI             | User Interface – Användargränssnitt |
-| UX            | User Experience – Användarupplevelse; hur det känns att använda ett system              |
+_Alfabetisk lista över tekniska termer, förkortningar och begrepp som används i rapporten._
 
-----------
+| Term/Förkortning | Förklaring |
+| ---------------- | ---------- |
+| API | Application Programming Interface – Gränssnitt för kommunikation mellan mjukvarusystem |
+| FP | Functional Programming – Funktionell programmering |
+| OOP | Object-Oriented Programming – Objektorienterad programmering |
+| REST | Representational State Transfer – Arkitekturstil för webbaserade API:er |
+| SoC | Separation of Concerns – Principen att separera olika ansvarsområden i kod |
+| UI | User Interface – Användargränssnitt |
+
+---
 
 ## 1. Inledning
 
@@ -44,56 +44,48 @@ Syftet är att undersöka hur spellogik kan implementeras i React samt jämföra
 
 ### 1.3 Frågeställningar
 
-1.  Hur kan spellogik för Texas Hold'em Poker, såsom handvärdering, turordning och satsningsrundor, implementeras i en funktionell struktur med React och TypeScript?
-2.  Hur kan ett reaktivt tillståndshanteringssystem med Zustand användas för att hantera spelstatus i realtid i ett webbaserat pokerspel?
-3.  Vilka skillnader finns i hur spellogik struktureras mellan en funktionell approach i TypeScript och en objektorienterad approach i Java?
-4.  Hur skiljer sig hanteringen av tillstånd och dataflöde åt mellan Zustand i React och ett klassbaserat system i Java när det gäller komplexitet och underhållbarhet?
-5.  Vilka styrkor och svagheter uppvisar funktionell programmering kontra objektorienterad programmering när det gäller separation of concerns i ett spelprojekt?
+1. Hur kan spellogik för Texas Hold'em Poker, såsom handvärdering, turordning och satsningsrundor, implementeras i en funktionell struktur med React och TypeScript?
+2. Hur kan ett reaktivt tillståndshanteringssystem med Zustand användas för att hantera spelstatus i realtid i ett webbaserat pokerspel?
+3. Vilka skillnader finns i hur spellogik struktureras mellan en funktionell approach i TypeScript och en objektorienterad approach i Java?
+4. Hur skiljer sig hanteringen av tillstånd och dataflöde åt mellan Zustand i React och ett klassbaserat system i Java när det gäller komplexitet och underhållbarhet?
+5. Vilka styrkor och svagheter uppvisar funktionell programmering kontra objektorienterad programmering när det gäller separation of concerns i ett spelprojekt?
 
 ### 1.4 Avgränsningar
 
 Spelet kommer inte inkludera följande:
-
--   Multiplayer-funktionalitet
--   Avancerad AI för bots
--   Backend eller databas
+- Multiplayer-funktionalitet
+- Avancerad AI för bots
+- Backend eller databas
 
 Jämförelsen kommer inte inkludera följande:
-
--   Fördjupning av objektorienterade programmeringskoncept
+- Fördjupning av objektorienterade programmeringskoncept
 
 ### 1.5 Metodöversikt
 
 Arbetet består av två delar: projektbygget av pokerspelet och jämförelsen mellan funktionell utveckling och objektorienterad utveckling. Under utvecklingen används agil utvecklingsmetodik. Jämförelsen genomförs genom löpande arkitektonisk analys snarare än som en separat studie, vilket möjliggör konkreta observationer grundade i faktisk implementationserfarenhet.
 
-----------
+---
 
 ## 2. Teoretisk Grund och Relaterat Arbete
 
 ### 2.1 Tekniska Koncept
 
 #### React
-
 React är ett JavaScript-bibliotek utvecklat av Facebook för att bygga användargränssnitt genom komponentbaserad utveckling [1]. React använder ett deklarativt arbetssätt där användargränssnittet uppdateras automatiskt baserat på förändringar i applikationens tillstånd. Det är värt att notera att React i grunden inte påtvingar ett visst paradigm — det är möjligt att skriva React-komponenter på ett mer imperativt eller till och med klassorienterat sätt — men konventionen och ekosystemet lutar starkt mot funktionell stil med hooks.
 
 #### TypeScript
-
 TypeScript är en vidareutveckling av JavaScript som introducerar statisk typning [3]. Detta gör det möjligt att upptäcka fel tidigare under utvecklingen och förbättrar kodens läsbarhet och underhållbarhet, särskilt i större projekt. TypeScript möjliggör också mer uttrycksfull modellering av domänlogik, exempelvis genom union types för kortfärger eller diskriminerade unioner för speltillstånd.
 
 #### Funktionell programmering
-
 Funktionell programmering (FP) bygger på användning av rena funktioner och immutabel data [4]. En ren funktion returnerar alltid samma resultat för samma indata och producerar inga sidoeffekter, vilket förenklar testning och felsökning. I React används ofta funktionella komponenter och separata hjälpfunktioner för att hantera logik och tillstånd. Det är viktigt att notera att TypeScript/React inte är ett rent funktionellt språk — bieffekter förekommer, men de hanteras kontrollerat via mekanismer som Zustand.
 
 #### Objektorienterad programmering
-
 Objektorienterad programmering (OOP) är ett programmeringsparadigm där data och beteenden organiseras i objekt och klasser [2]. Centrala koncept inom OOP inkluderar inkapsling (att dölja intern implementation), arv (att återanvända och specialisera beteende) och polymorfism (att behandla olika objekttyper enhetligt). Java är ett typexempel på ett språk byggt kring detta paradigm.
 
 #### Zustand
-
 Zustand är ett lättviktigt bibliotek för state management i React-applikationer [5]. Till skillnad från tyngre alternativ som Redux kräver Zustand minimal konfiguration och följer ett enkelt mönster där ett globalt store definieras med tillstånd och mutationsfunktioner. Biblioteket används i detta projekt för att lagra och hantera global speldata såsom spelarstatus, marker, satsningar och aktuella rundor.
 
 #### Texas Hold'em Poker
-
 Texas Hold'em är en variant av poker där varje spelare får två privata kort och delar fem gemensamma kort på bordet [6]. Spelet innehåller flera satsningsrundor (pre-flop, flop, turn och river) och kräver logik för handvärdering, potthantering och turordning. Regelkomplexiteten — inklusive blind-systemet, all-in-scenarion och sidopottar — gör Texas Hold'em till ett lämpligt testfall för att utvärdera hur väl en given kodstruktur hanterar interagerande regler och tillstånd.
 
 ### 2.2 Befintlig Forskning och Lösningar
@@ -114,13 +106,17 @@ Skillnaden i state management är särskilt central för detta projekt. React oc
 
 Sammanfattningsvis erbjuder de två paradigmen fundamentalt olika svar på samma fråga: var ska tillstånd bo och vem ansvarar för att uppdatera det? Det är detta grundläggande val som påverkar projektets arkitektur mer än enskilda implementationsdetaljer.
 
-----------
+---
 
 ## 3. Metod och Genomförande
 
 ### 3.1 Övergripande Arbetsgång
 
 Under utvecklingen användes agil utvecklingsmetodik via GitHub Projects [8]. I GitHub Projects lades issues till för alla steg som skulle genomföras inom projektet. Exempel på issues är: skapa skiss för webbsida, skapa projektskelett och skapa visuella komponenter.
+
+<img width="1088" height="1103" alt="github projects table" src="https://github.com/user-attachments/assets/53058454-1896-4a9b-b90a-18c3ecf17ece" />
+
+*Figur 7: GitHub Projects-tavlan med samtliga issues för projektet.*
 
 Under utvecklingen implementerades delar av projektet i ordning efter issues. Först skapades en skiss av hur webbsidan skulle se ut, inklusive en startskärm och hur spelet ser ut när det har startats. Skissen för spelläget innehöll ett spelarbord, spelarplatser, kort, chips och knappar för användarens val – satsa, knacka och lägga sig.
 
@@ -154,18 +150,18 @@ Analysen genomfördes löpande under projektets utveckling. Varje gång en stör
 
 Följande verktyg och tekniker användes:
 
--   React [1]
--   TypeScript [3]
--   Tailwind CSS
--   Zustand [5]
--   Vite
--   Git och GitHub
--   GitHub Pages
--   Visual Studio Code
--   Claude (AI-assistent)
--   ChatGPT (AI-assistent)
--   Codex
--   StackEdit
+* React [1]
+* TypeScript [3]
+* Tailwind CSS
+* Zustand [5]
+* Vite
+* Git och GitHub
+* GitHub Pages
+* Visual Studio Code
+* Claude (AI-assistent)
+* ChatGPT (AI-assistent)
+* Codex
+* StackEdit
 
 React användes för användargränssnittet medan TypeScript användes för att skapa tydligare datastrukturer och säkrare kod. Zustand användes för global state management. Tailwind CSS användes för styling. Vite användes för projektkonfiguration. Git och GitHub användes för versionshantering, och GitHub Pages för att hosta projektet.
 
@@ -179,11 +175,11 @@ Information samlades in genom officiell dokumentation, teknisk litteratur och an
 
 Analysen fokuserade på följande dimensioner, valda för deras relevans för underhållbarhet och arkitekturkvalitet:
 
--   Kodstruktur – hur logik och data organiseras
--   Läsbarhet – hur enkelt koden är att följa för en utomstående
--   Underhållbarhet – hur enkelt det är att förändra eller utöka koden
--   Separation of concerns – i vilken grad olika ansvarsområden hålls åtskilda
--   Hantering av state och dataflöde – var tillstånd bor och hur det uppdateras
+- Kodstruktur – hur logik och data organiseras
+- Läsbarhet – hur enkelt koden är att följa för en utomstående
+- Underhållbarhet – hur enkelt det är att förändra eller utöka koden
+- Separation of concerns – i vilken grad olika ansvarsområden hålls åtskilda
+- Hantering av state och dataflöde – var tillstånd bor och hur det uppdateras
 
 ### 3.4 Kvalitetssäkring
 
@@ -193,7 +189,7 @@ Versionshantering genom Git användes för att dokumentera förändringar och m�
 
 En extern testperson testade spelet för att ge en objektiv syn på spelupplevelsen.
 
-----------
+---
 
 ## 4. Resultat
 
@@ -209,7 +205,14 @@ Chips-filen innehåller logik för hur satsningar bryts ned för att visa rätt 
 
 Store-mappen innehåller `gameStore`, som hanterar spelstatus, spelarordning och satsningar. Skärmar-mappen innehåller `GameScreen` och `StartScreen`.
 
-_[Bilder på projektet och mappstruktur läggs till här]_
+<img width="1550" height="968" alt="poker game start image" src="https://github.com/user-attachments/assets/be5bc504-2c32-4e1e-b9db-2319eaa25d61" />
+
+*Figur 1: Startskärmen (StartScreen) med highscore-visning och startknapp.*
+
+<img width="1331" height="1125" alt="poker game playing pre flop" src="https://github.com/user-attachments/assets/d0431f3c-2670-4c37-9c1b-ef1f0516ea86" />
+
+
+*Figur 2: Pre-flop-stadiet. De gemensamma korten är ännu dolda, blinds har placerats och bots har redan agerat i loggen. Spelaren väntar på att agera.*
 
 ### 4.2 Detaljerade Fynd
 
@@ -217,9 +220,20 @@ Spellogiken implementerades framgångsrikt i en funktionell struktur [4]. Nedan 
 
 **Frågeställning 1 – Funktionell implementation av pokerlogik:** Samtliga centrala spelregler implementerades som separata, statslösa funktioner. Handvärdering hanterades i hand-filen genom en serie filtreringsfunktioner som identifierar hand-kombinationer i rangordning (royal flush ner till högt kort). Funktionerna tog kortarrayer som indata och returnerade ett resultatobjekt utan att mutera någon extern state. Detta visade sig vara en tydlig styrka med FP — logiken var isolerad, lätt att följa och enkel att testa separat.
 
+<img width="1344" height="1028" alt="poker game post flop" src="https://github.com/user-attachments/assets/880a19e9-2087-4022-ac21-f27ebd7474bf" />
+*Figur 3: GameScreen under flop-rundan, med satsningskontroller, chipvisualisering och spelloggen nedtill.*
+
 **Frågeställning 2 – State management med Zustand:** All speldata lagrades i `gameStore`, vilket innebar att användargränssnittet automatiskt uppdaterades när spelets state förändrades [5]. Zustand hanterade det globala tillståndet med minimalt konfigurationsbehov. En viktig observation var att gränsen mellan "ren logik" (i `gameFlow`) och "tillståndshantering" (i `gameStore`) inte alltid var självklar — vissa beslut om var logik hörde hemma krävde medvetna arkitekturval.
 
+<img width="1177" height="1018" alt="poker game pre showdown" src="https://github.com/user-attachments/assets/ae4ee439-f326-42e8-91f2-ca8604ce02f1" />
+
+*Figur 4: GameScreen vid river. Realtidsuppdateringen av handvärdet (Two Pair) illustrerar Zustand-storens reaktiva state management.*
+
 **Frågeställning 3 och 4 – Jämförelse FP vs OOP (se även avsnitt 4.3):** I den funktionella implementationen hölls data och logik medvetet separerade. I en OOP-implementation hade samma funktionalitet naturligt samlats i objekt: en `Deck`-klass med `shuffle()` och `deal()`, en `Player`-klass med `chips`, `hand` och `bet()`, och ett `Game`-objekt som orkesterar flödet. I den funktionella varianten lever dessa operationer i separata filer och tar den nödvändiga datan som argument, medan state bor externt i Zustand. Ingen av de två strukturerna är objektiv överlägsen — de representerar fundamentalt olika svar på frågan om var ansvar ska placeras.
+
+<img width="1110" height="916" alt="poker game all in image" src="https://github.com/user-attachments/assets/1d506cf4-d7cd-4137-8c4c-469f63aa8843" />
+
+*Figur 5: All-in-scenario med tre spelare. Detta tillstånd kräver att gameStore håller koll på varje spelares insats, all-in-belopp och aktiv status parallellt — ett av de mer komplexa state management-fallen i projektet.*
 
 **Frågeställning 5 – Separation of concerns:** Separationen mellan `gameFlow`, `gameStore` och `GameScreen` möjliggjorde att logik, state management och presentation kunde utvecklas relativt oberoende av varandra [7]. Denna separation uppnåddes medvetet och krävde disciplin — det var lätt att låta `gameStore` ta på sig för mycket ansvar.
 
@@ -227,53 +241,15 @@ Spellogiken implementerades framgångsrikt i en funktionell struktur [4]. Nedan 
 
 Nedanstående tabell sammanfattar de centrala skillnaderna som identifierades under projektet, baserat på faktisk implementationserfarenhet av den funktionella varianten och arkitektonisk analys av en hypotetisk OOP-variant.
 
-Dimension
-
-Funktionell (React/TypeScript/Zustand)
-
-Objektorienterad (Java)
-
-**Kodstruktur**
-
-Logik i separata filer och funktioner; data som argument
-
-Logik och data samlat i klasser; objekt ansvarar för sig själva
-
-**State management**
-
-Externt i Zustand; reaktivt UI
-
-Internt i objekt; manuell synkronisering mot UI
-
-**Separation of concerns**
-
-Tydlig filbaserad separation (gameFlow / gameStore / GameScreen)
-
-Naturlig inkapsling per klass, men risk för tätt kopplade objekt
-
-**Testbarhet**
-
-Rena funktioner enkla att enhetstesta
-
-Kräver mock-objekt och setup för klassberoenden
-
-**Läsbarhet**
-
-Dataflödet tydligt; men spridning av logik över filer kan försvåra överblick
-
-Samlad logik per domänobjekt; men arvskedjor kan öka komplexitet
-
-**Underhållbarhet**
-
-Enkelt att lägga till nya funktioner utan att bryta befintlig state
-
-Enkelt att utöka klasser, men risk vid refaktorering av basklasser
-
-**Skalbarhet**
-
-Kräver disciplin för att undvika att gameStore växer okontrollerat
-
-Klassstrukturen skalas naturligt med fler domänobjekt
+| Dimension | Funktionell (React/TypeScript/Zustand) | Objektorienterad (Java) |
+|-----------|----------------------------------------|-------------------------|
+| **Kodstruktur** | Logik i separata filer och funktioner; data som argument | Logik och data samlat i klasser; objekt ansvarar för sig själva |
+| **State management** | Externt i Zustand; reaktivt UI | Internt i objekt; manuell synkronisering mot UI |
+| **Separation of concerns** | Tydlig filbaserad separation (gameFlow / gameStore / GameScreen) | Naturlig inkapsling per klass, men risk för tätt kopplade objekt |
+| **Testbarhet** | Rena funktioner enkla att enhetstesta | Kräver mock-objekt och setup för klassberoenden |
+| **Läsbarhet** | Dataflödet tydligt; men spridning av logik över filer kan försvåra överblick | Samlad logik per domänobjekt; men arvskedjor kan öka komplexitet |
+| **Underhållbarhet** | Enkelt att lägga till nya funktioner utan att bryta befintlig state | Enkelt att utöka klasser, men risk vid refaktorering av basklasser |
+| **Skalbarhet** | Kräver disciplin för att undvika att gameStore växer okontrollerat | Klassstrukturen skalas naturligt med fler domänobjekt |
 
 ### 4.4 Oväntade Resultat
 
@@ -283,7 +259,11 @@ Ett annat oväntat resultat var komplexiteten i botarnas beteende. De första im
 
 Användartestet visade att visuella detaljer hade större påverkan på spelupplevelsen än förväntat. Förslag som färgkodning av spelarnamn och tydligare loggmeddelanden förbättrade förståelsen av spelet trots att de inte påverkade spellogiken.
 
-----------
+<img width="1316" height="1108" alt="poker game game over" src="https://github.com/user-attachments/assets/0d9a68c3-2a09-4025-b0e9-6c42dc6bfc27" />
+
+*Figur 6: Game Over-läget med showdown-resultat och knapp för att återvända till startmenyn. Loggen nedtill visar hela händelseförloppet för den sista handen.*
+
+---
 
 ## 5. Diskussion
 
@@ -323,7 +303,7 @@ Projektet illustrerar en bredare trend inom mjukvaruutveckling: att gränserna m
 
 Det praktiska värdet av att förstå skillnaderna ligger inte i att välja ett paradigm och hålla sig till det, utan i att veta när ett paradigm löser ett problem bättre. Frontend med reaktivt UI är ett område där FP:s tydliga dataflöde är en naturlig match. Domänmodellering av komplexa affärssystem är ett område där OOP:s inkapsling historiskt visat sig stark. Insikten från detta projekt — att state management är den verkliga komplexiteten oavsett paradigm — är en generellt tillämpbar lärdom för systemdesign.
 
-----------
+---
 
 ## 6. Slutsatser
 
@@ -351,36 +331,36 @@ Ytterligare utveckling av spelet skulle kunna inkludera multiplayer via WebSocke
 
 En intressant fortsättning vore också att undersöka hybridansatser — exempelvis att använda OOP för domänmodellering (klasser för Deck, Hand, Player) kombinerat med Zustand för reaktivt UI. Många moderna frontend-system tillämpar just denna kombination, och att utvärdera den mot renodlade lösningar vore ett värdefullt bidrag.
 
-----------
+---
 
 ## 7. Referenser
 
-[1] Meta Open Source, _React – A JavaScript library for building user interfaces_. Meta Platforms. [Online]. Available: https://react.dev. [Accessed: 1 Jun. 2025].
+[1] Meta Open Source, *React – A JavaScript library for building user interfaces*. Meta Platforms. [Online]. Available: https://react.dev. [Accessed: 1 Jun. 2025].
 
-[2] G. Booch, R. Maksimchuk, M. Engle, B. Young, J. Conallen, and K. Houston, _Object-Oriented Analysis and Design with Applications_, 3rd ed. Upper Saddle River, NJ: Addison-Wesley, 2007.
+[2] G. Booch, R. Maksimchuk, M. Engle, B. Young, J. Conallen, and K. Houston, *Object-Oriented Analysis and Design with Applications*, 3rd ed. Upper Saddle River, NJ: Addison-Wesley, 2007.
 
-[3] Microsoft, _TypeScript – JavaScript with syntax for types_. Microsoft Corporation. [Online]. Available: https://www.typescriptlang.org. [Accessed: 1 Jun. 2025].
+[3] Microsoft, *TypeScript – JavaScript with syntax for types*. Microsoft Corporation. [Online]. Available: https://www.typescriptlang.org. [Accessed: 1 Jun. 2025].
 
-[4] M. Fogus and C. Houser, _Functional JavaScript: Introducing Functional Programming with Underscore.js_. Sebastopol, CA: O'Reilly Media, 2013.
+[4] M. Fogus and C. Houser, *Functional JavaScript: Introducing Functional Programming with Underscore.js*. Sebastopol, CA: O'Reilly Media, 2013.
 
-[5] P. Kriszkovics, _Zustand – Bear necessities for state management in React_. GitHub. [Online]. Available: https://github.com/pmndrs/zustand. [Accessed: 1 Jun. 2025].
+[5] P. Kriszkovics, *Zustand – Bear necessities for state management in React*. GitHub. [Online]. Available: https://github.com/pmndrs/zustand. [Accessed: 1 Jun. 2025].
 
-[6] D. Sklansky and M. Malmuth, _Hold'em Poker for Advanced Players_, 3rd ed. Henderson, NV: Two Plus Two Publishing, 1999.
+[6] D. Sklansky and M. Malmuth, *Hold'em Poker for Advanced Players*, 3rd ed. Henderson, NV: Two Plus Two Publishing, 1999.
 
-[7] E. Normand, _Grokking Simplicity: Taming Complex Thinking with Functional Thinking_. Shelter Island, NY: Manning Publications, 2021.
+[7] E. Normand, *Grokking Simplicity: Taming Complex Thinking with Functional Thinking*. Shelter Island, NY: Manning Publications, 2021.
 
-[8] GitHub, _GitHub Projects – Plan and track work_. GitHub, Inc. [Online]. Available: https://docs.github.com/en/issues/planning-and-tracking-with-projects. [Accessed: 1 Jun. 2025].
+[8] GitHub, *GitHub Projects – Plan and track work*. GitHub, Inc. [Online]. Available: https://docs.github.com/en/issues/planning-and-tracking-with-projects. [Accessed: 1 Jun. 2025].
 
-----------
+---
 
 ## Bilagor
 
-**För utvecklingsprojekt:**
+**Figurförteckning:**
 
--   Bilaga A: Källkod (utdrag eller repo-referens)
--   Bilaga B: Teknisk dokumentation
--   Bilaga C: Testresultat
-
-**För alla typer:**
-
--   Bilaga X: Projektplanering och tidsrapporter
+- Figur 1: Startskärmen (StartScreen) med highscore-visning och startknapp
+- Figur 2: Pre-flop-stadiet direkt efter spelstart med blinds och satsningsalternativ
+- Figur 3: GameScreen under flop-rundan med satsningskontroller och spelloggen
+- Figur 4: GameScreen vid river med realtidsuppdaterad handvärdering (Two Pair)
+- Figur 5: All-in-scenario under turn med flera simultant all-in-spelare
+- Figur 6: Game Over-läget med showdown-resultat och returknapp till startmenyn
+- Figur 7: GitHub Projects-tavlan med samtliga issues för projektet
