@@ -5,29 +5,28 @@
 
 ## Sammanfattning (Abstract)
 
-_Skriv detta avsnitt sist, även om det kommer först i rapporten._
+Modern web development relies increasingly on component-based frameworks such as React, while traditional backend and enterprise systems continue to favour object-oriented programming (OOP) paradigms. Understanding how these paradigms differ in practice is relevant for developers who must choose or combine architectural approaches. This project investigates how game logic for Texas Hold'em Poker can be implemented using a functional programming (FP) approach with React and TypeScript, and compares this against a theoretical object-oriented equivalent in Java.
 
-Detta är en kortfattad sammanfattning (max 250 ord) på **engelska** som ska innehålla:
+The work followed an agile development methodology and consisted of two parallel tracks: building a fully playable browser-based poker game, and conducting an ongoing architectural analysis comparing the functional implementation to a hypothetical OOP design. State management was handled using Zustand, a lightweight React state library.
 
--   Bakgrund och problemområde
--   Syfte med arbetet
--   Metod/approach (teoretisk, praktisk eller kombinerad)
--   Huvudresultat och slutsatser
--   Praktisk betydelse
+The resulting application is a complete single-player Texas Hold'em game featuring hand evaluation, betting rounds, and bot opponents with distinct play styles. The functional structure proved effective for isolating game logic in pure, reusable functions. Zustand enabled reactive UI updates with minimal configuration. A structured comparison across seven dimensions — including code structure, state management, testability, and maintainability — revealed that the two paradigms represent fundamentally different answers to where state and responsibility should reside, rather than being equivalent alternatives.
 
-**Nyckelord:** _Lista 3-5 tekniska nyckelord på engelska_
+The most significant finding was that state management constitutes the primary architectural challenge regardless of paradigm. The paradigm choice determines how that complexity is distributed, but does not eliminate it. These insights are broadly applicable to developers designing React-based applications with complex business or game logic.
+
+**Keywords:** React, TypeScript, functional programming, object-oriented programming, state management
 
 ----------
 
 ## Förkortningar och Begrepp
 
-_Alfabetisk lista över tekniska termer, förkortningar och begrepp som används i rapporten._
-
-
 | Term/Förkortning | Förklaring                                                                             |
 | ---------------- | -------------------------------------------------------------------------------------- |
-| API              | Application Programming Interface - Gränssnitt för kommunikation mellan mjukvarusystem |
-| REST             | Representational State Transfer - Arkitekturstil för webbaserade API:er                |
+| AI           | Artificial Intelligence – Artificiell intelligens, i detta projekt avser det botarnas beslutslogik |
+| FP         | Functional Programming – Funktionell programmering                |
+| MVC            | Model-View-Controller – Arkitekturmönster som separerar datamodell, presentation och styrlogik |
+| OOP           | Object-Oriented Programming – Objektorienterad programmering              |
+| UI             | User Interface – Användargränssnitt |
+| UX            | User Experience – Användarupplevelse; hur det känns att använda ett system              |
 
 ----------
 
@@ -36,6 +35,8 @@ _Alfabetisk lista över tekniska termer, förkortningar och begrepp som används
 ### 1.1 Bakgrund
 
 Moderna webbapplikationer byggs ofta med ramverk som React, där fokus ligger på komponentbaserad utveckling och hantering av tillstånd [1]. Objektorienterad programmering, exempelvis i Java, används traditionellt för att strukturera komplex logik genom klasser och arv [2]. Spelutveckling innebär hantering av komplex logik som regler, turordning och AI-beslut, vilket gör det till ett lämpligt område för att jämföra olika programmeringsparadigm.
+
+Valet av programmeringsparadigm påverkar inte bara hur kod skrivs utan också hur ett system underhålls, skalas och felsöks över tid. Att förstå dessa konsekvenser är centralt för modern mjukvaruutveckling, särskilt i en bransch där frontend och backend alltmer delas upp i separata teknikstackar med olika paradigmatiska rötter.
 
 ### 1.2 Syfte
 
@@ -63,7 +64,7 @@ Jämförelsen kommer inte inkludera följande:
 
 ### 1.5 Metodöversikt
 
-Arbetet består av två delar: projektbygget av pokerspelet och jämförelsen mellan funktionell utveckling och objektorienterad utveckling. Under utvecklingen används agil utvecklingsmetodik.
+Arbetet består av två delar: projektbygget av pokerspelet och jämförelsen mellan funktionell utveckling och objektorienterad utveckling. Under utvecklingen används agil utvecklingsmetodik. Jämförelsen genomförs genom löpande arkitektonisk analys snarare än som en separat studie, vilket möjliggör konkreta observationer grundade i faktisk implementationserfarenhet.
 
 ----------
 
@@ -73,43 +74,45 @@ Arbetet består av två delar: projektbygget av pokerspelet och jämförelsen me
 
 #### React
 
-React är ett JavaScript-bibliotek utvecklat av Facebook för att bygga användargränssnitt genom komponentbaserad utveckling [1]. React använder ett deklarativt arbetssätt där användargränssnittet uppdateras automatiskt baserat på förändringar i applikationens tillstånd.
+React är ett JavaScript-bibliotek utvecklat av Facebook för att bygga användargränssnitt genom komponentbaserad utveckling [1]. React använder ett deklarativt arbetssätt där användargränssnittet uppdateras automatiskt baserat på förändringar i applikationens tillstånd. Det är värt att notera att React i grunden inte påtvingar ett visst paradigm — det är möjligt att skriva React-komponenter på ett mer imperativt eller till och med klassorienterat sätt — men konventionen och ekosystemet lutar starkt mot funktionell stil med hooks.
 
 #### TypeScript
 
-TypeScript är en vidareutveckling av JavaScript som introducerar statisk typning [3]. Detta gör det möjligt att upptäcka fel tidigare under utvecklingen och förbättrar kodens läsbarhet och underhållbarhet, särskilt i större projekt.
+TypeScript är en vidareutveckling av JavaScript som introducerar statisk typning [3]. Detta gör det möjligt att upptäcka fel tidigare under utvecklingen och förbättrar kodens läsbarhet och underhållbarhet, särskilt i större projekt. TypeScript möjliggör också mer uttrycksfull modellering av domänlogik, exempelvis genom union types för kortfärger eller diskriminerade unioner för speltillstånd.
 
 #### Funktionell programmering
 
-Funktionell programmering bygger på användning av rena funktioner och immutabel data [4]. I React används ofta funktionella komponenter och separata hjälpfunktioner för att hantera logik och tillstånd.
+Funktionell programmering (FP) bygger på användning av rena funktioner och immutabel data [4]. En ren funktion returnerar alltid samma resultat för samma indata och producerar inga sidoeffekter, vilket förenklar testning och felsökning. I React används ofta funktionella komponenter och separata hjälpfunktioner för att hantera logik och tillstånd. Det är viktigt att notera att TypeScript/React inte är ett rent funktionellt språk — bieffekter förekommer, men de hanteras kontrollerat via mekanismer som Zustand.
 
 #### Objektorienterad programmering
 
-Objektorienterad programmering (OOP) är ett programmeringsparadigm där data och beteenden organiseras i objekt och klasser [2]. Centrala koncept inom OOP inkluderar inkapsling, arv och polymorfism.
+Objektorienterad programmering (OOP) är ett programmeringsparadigm där data och beteenden organiseras i objekt och klasser [2]. Centrala koncept inom OOP inkluderar inkapsling (att dölja intern implementation), arv (att återanvända och specialisera beteende) och polymorfism (att behandla olika objekttyper enhetligt). Java är ett typexempel på ett språk byggt kring detta paradigm.
 
 #### Zustand
 
-Zustand är ett lättviktigt bibliotek för state management i React-applikationer [5]. Biblioteket används för att lagra och hantera global speldata såsom spelarstatus, marker, satsningar och aktuella rundor.
+Zustand är ett lättviktigt bibliotek för state management i React-applikationer [5]. Till skillnad från tyngre alternativ som Redux kräver Zustand minimal konfiguration och följer ett enkelt mönster där ett globalt store definieras med tillstånd och mutationsfunktioner. Biblioteket används i detta projekt för att lagra och hantera global speldata såsom spelarstatus, marker, satsningar och aktuella rundor.
 
 #### Texas Hold'em Poker
 
-Texas Hold'em är en variant av poker där varje spelare får två privata kort och delar fem gemensamma kort på bordet [6]. Spelet innehåller flera satsningsrundor och kräver logik för handvärdering, potthantering och turordning.
+Texas Hold'em är en variant av poker där varje spelare får två privata kort och delar fem gemensamma kort på bordet [6]. Spelet innehåller flera satsningsrundor (pre-flop, flop, turn och river) och kräver logik för handvärdering, potthantering och turordning. Regelkomplexiteten — inklusive blind-systemet, all-in-scenarion och sidopottar — gör Texas Hold'em till ett lämpligt testfall för att utvärdera hur väl en given kodstruktur hanterar interagerande regler och tillstånd.
 
 ### 2.2 Befintlig Forskning och Lösningar
 
-Det finns många olika webbaserade kortspel och pokerapplikationer som använder moderna frontend-ramverk som React. Open source-projekt på GitHub visar ofta implementationer av pokerlogik genom både funktionella och objektorienterade lösningar.
+Det finns många webbaserade kortspel och pokerapplikationer som använder moderna frontend-ramverk som React. Open source-projekt på GitHub visar ofta implementationer av pokerlogik genom både funktionella och objektorienterade lösningar, vilket gör det möjligt att observera praktiska arkitektoniska skillnader.
 
-Kommersiella pokerplattformar som PokerStars och PartyPoker använder vanligtvis klient-server-arkitektur med realtidskommunikation och databashantering. I detta arbete fokuseras endast på frontend-logiken för att analysera hur spellogiken kan struktureras utan backend-komplexitet.
+Kommersiella pokerplattformar som PokerStars och PartyPoker använder vanligtvis klient-server-arkitektur med realtidskommunikation och databashantering. I detta arbete fokuseras enbart på frontend-logiken för att analysera hur spellogiken kan struktureras utan backend-komplexitet. Detta val innebär att resultaten är specifika för frontend-domänen och inte nödvändigtvis generaliserbara till fullstackutveckling.
 
-Tidigare forskning inom programmeringsparadigm visar att funktionell programmering ofta lämpar sig väl för frontend-utveckling tack vare sitt tydliga dataflöde och enklare state management [4] [7]. Objektorienterad programmering används däremot ofta i större system där komplex logik behöver organiseras i tydliga objektstrukturer [2].
+Tidigare forskning inom programmeringsparadigm visar att funktionell programmering ofta lämpar sig väl för frontend-utveckling tack vare sitt tydliga dataflöde och enklare state management [4] [7]. Objektorienterad programmering används däremot ofta i större system där komplex domänlogik behöver organiseras i tydliga objektstrukturer [2]. Det bör noteras att de flesta moderna system använder en kombination av paradigm snarare än ett renodlat tillvägagångssätt.
 
 ### 2.3 Teknisk/Teoretisk Jämförelse
 
-En funktionell struktur i React bygger vanligtvis på separata funktioner för spellogik, där data skickas mellan funktioner utan att modifieras direkt. Detta kan förbättra testbarhet och minska bieffekter [4].
+En funktionell struktur i React bygger vanligtvis på separata funktioner för spellogik, där data skickas mellan funktioner utan att modifieras direkt [4]. Fördelen med detta är att varje funktion kan testas isolerat och att dataflödet är lätt att följa. Nackdelen uppstår när logiken blir komplex nog att kräva delning av tillstånd mellan många funktioner — vilket är precis vad state management-verktyg som Zustand är designade att lösa.
 
-I en objektorienterad struktur organiseras logiken istället i klasser, exempelvis `Player`, `Deck`, `Game` och `HandEvaluator`. Detta kan göra systemet mer intuitivt när många objekt med olika beteenden ska hanteras [2].
+I en objektorienterad struktur organiseras logiken i klasser, exempelvis `Player`, `Deck`, `Game` och `HandEvaluator` [2]. Inkapsling gör att varje objekt äger sin data och sina operationer, vilket kan minska oönskad koppling mellan delar av systemet. Nackdelen är att arvskedjor och tätt kopplade objekt kan göra systemet svårare att förändra utan att oavsiktligt påverka andra delar — ett fenomen känt som "fragile base class problem".
 
-Skillnaden mellan dessa metoder blir särskilt tydlig vid state management. React och Zustand arbetar reaktivt där användargränssnittet uppdateras automatiskt vid förändringar i state [1] [5]. Ett klassbaserat Java-system arbetar ofta mer manuellt genom objektinstanser och funktionsanrop.
+Skillnaden i state management är särskilt central för detta projekt. React och Zustand arbetar reaktivt — UI:t uppdateras automatiskt när state ändras [1] [5] — och state är per definition externt från logiken. I ett Java-system skulle state normalt ägas av objekten själva, exempelvis att ett `Game`-objekt håller aktuell runda och pott internt. Detta skapar en mer självförsörjande modell men gör det svårare att separera presentation från logik utan ett explicit arkitekturmönster som MVC eller Observer.
+
+Sammanfattningsvis erbjuder de två paradigmen fundamentalt olika svar på samma fråga: var ska tillstånd bo och vem ansvarar för att uppdatera det? Det är detta grundläggande val som påverkar projektets arkitektur mer än enskilda implementationsdetaljer.
 
 ----------
 
@@ -125,15 +128,11 @@ Sedan skapades projektets skelett, det vill säga alla delar som behövs för at
 
 Därefter skapades TypeScript-typer för alla relevanta delar: kort, spelare, spel och hand (kombinationen av kort som ger ett pokervärde, exempelvis par eller kåk).
 
-Sedan skapades visuella komponenter: pokerbord, kort, spelare, knappar och chips. Detta gjordes för att möjliggöra ett visuellt fungerande mock-spel, ungefär som att bygga karosseri och interiör på en bil innan motor och växellåda monteras.
+Sedan skapades visuella komponenter: pokerbord, kort, spelare, knappar och chips. Detta gjordes för att möjliggöra ett visuellt fungerande mock-spel — ett tillvägagångssätt som liknar component-first-utveckling, där presentationslagret byggs separat från logiklagret för att hålla dem löst kopplade.
 
 Därefter skapades de grundläggande funktionerna för pokerspelet: blanda-funktionen (blanda en kortlek), dela-ut-funktionen (dela ut två kort till varje spelare), räkna-ut-resultat-funktionen (avgöra vem som vunnit en runda) samt spelarens valfunktioner (satsa, knacka och lägga sig).
 
-Sedan skapades de större filerna: `gameStore`, `gameFlow` och `GameScreen`. `GameScreen` är det som visas när spelaren spelar spelet. `gameFlow` innehåller reglerna och logiken, inklusive funktioner som dela ut och räkna ut resultat. `gameStore` hanterar vilka funktioner som ska anropas från `gameFlow` och när, hanterar states, artificiell fördröjning och styr vad som visas i `GameScreen`.
-
-Kortfattat kan `GameScreen` beskrivas som presentationslagret, `gameFlow` som ett logiklager (jämförbart med en enkel backend), och `gameStore` som den komponent som kopplar samman de övriga två beroende på användarens val.
-
-Med alla dessa filer på plats var det möjligt att testa hela spelet, inte bara separata funktioner. Det saknades dock fortfarande bots.
+Sedan skapades de större filerna: `gameStore`, `gameFlow` och `GameScreen`. `GameScreen` är presentationslagret. `gameFlow` innehåller reglerna och logiken. `gameStore` hanterar vilka funktioner som ska anropas från `gameFlow` och när, hanterar states, artificiell fördröjning och styr vad som visas i `GameScreen`. Denna tredelade separation motsvarar en enkel variant av ett lagerarkitekturmönster, vilket är ett vanligt designval för att uppnå separation of concerns [7].
 
 Bots skapades i `gameFlow` med fem arketyper av varierande spelstil: passiva, aggressiva och adaptiva. All logik för bots inkluderades här – när de ska satsa, knacka eller lägga sig, samt vilka händer de väljer att spela eller passa.
 
@@ -141,19 +140,15 @@ Därefter fokuserades arbetet på testning, buggfixar och finslipning av UI och 
 
 #### Användartestning
 
-En person testade spelet utan handledning och gav feedback. Testpersonen ansåg att spelloggen (som visar bots och spelares drag) var svårläst och föreslog färgkodning av spelarnamnen för att lättare skilja dem åt. Testpersonen föreslog också att bots beslutstid skulle ökas till mer än en sekund. Designmässigt upplevdes spelet som visuellt tillfredsställande, och botarnas beteende bedömdes som varierat och trovärdigt. Notera att testet genomfördes med en enda testperson, vilket begränsar generaliserbarheten av resultaten (se avsnitt 5.3).
+En person testade spelet utan handledning och gav feedback. Testpersonen ansåg att spelloggen (som visar bots och spelares drag) var svårläst och föreslog färgkodning av spelarnamnen. Testpersonen föreslog också att bots beslutstid skulle ökas till mer än en sekund. Designmässigt upplevdes spelet som visuellt tillfredsställande, och botarnas beteende bedömdes som varierat och trovärdigt. Notera att testet genomfördes med en enda testperson, vilket begränsar generaliserbarheten av resultaten (se avsnitt 5.3).
 
 #### Jämförelse mellan funktionell och objektorienterad struktur
 
-Parallellt med utvecklingen genomfördes en jämförelse mellan den funktionella struktur som användes i projektet och hur samma funktionalitet skulle kunna implementeras med objektorienterad programmering i Java.
+Parallellt med utvecklingen genomfördes en löpande arkitektonisk jämförelse mellan den funktionella struktur som användes i projektet och hur samma funktionalitet skulle kunna implementeras med objektorienterad programmering i Java.
 
 Jämförelsen baserades på de centrala delarna av projektet: hantering av spelare, kortlek, handvärdering och spelstatus. För varje del analyserades hur den implementerade funktionella lösningen var uppbyggd samt hur motsvarande lösning skulle kunna struktureras med klasser och objekt [2].
 
-I den funktionella implementationen placerades logik i separata funktioner och filer. Exempelvis hanterades kortutdelning, handvärdering och botbeslut genom fristående funktioner i `gameFlow` och relaterade logikfiler. Tillståndet för spelet lagrades centralt i `gameStore` via Zustand [5].
-
-Vid en objektorienterad implementation skulle motsvarande funktionalitet kunna organiseras i klasser som `Player`, `Deck`, `Hand` och `Game`, där varje klass innehåller både data och beteende genom attribut och metoder.
-
-Jämförelsen fokuserade på kodstruktur, separation of concerns, hantering av state, läsbarhet och underhållbarhet. Analysen genomfördes löpande under projektets utveckling genom reflektion över hur varje större funktion hade kunnat implementeras i ett objektorienterat system.
+Analysen genomfördes löpande under projektets utveckling. Varje gång en större funktion implementerades ställdes frågan: hur hade detta sett ut i ett klassorienterat system, och vilka konsekvenser hade det fått för arkitekturen?
 
 ### 3.2 Verktyg och Tekniker
 
@@ -180,15 +175,15 @@ StackEdit användes vid skrivandet av rapporten som en webbaserad Markdown-redig
 
 ### 3.3 Datainsamling och Analys
 
-Information samlades in genom dokumentation, tekniska artiklar och analys av befintliga projekt. Projektets resultat analyserades genom att jämföra hur samma typ av spellogik skulle kunna struktureras i både funktionell och objektorienterad programmering.
+Information samlades in genom officiell dokumentation, teknisk litteratur och analys av befintliga projekt [1] [2] [3] [4] [5]. Projektets resultat analyserades genom att jämföra hur samma typ av spellogik strukturerades i den funktionella implementationen och hur motsvarande lösning hade kunnat organiseras objektorienterat.
 
-Fokus låg på:
+Analysen fokuserade på följande dimensioner, valda för deras relevans för underhållbarhet och arkitekturkvalitet:
 
--   Kodstruktur
--   Läsbarhet
--   Underhållbarhet
--   Separation of concerns
--   Hantering av state och dataflöde
+-   Kodstruktur – hur logik och data organiseras
+-   Läsbarhet – hur enkelt koden är att följa för en utomstående
+-   Underhållbarhet – hur enkelt det är att förändra eller utöka koden
+-   Separation of concerns – i vilken grad olika ansvarsområden hålls åtskilda
+-   Hantering av state och dataflöde – var tillstånd bor och hur det uppdateras
 
 ### 3.4 Kvalitetssäkring
 
@@ -208,29 +203,85 @@ Resultatet av projektet är ett spelbart webbaserat Texas Hold'em Poker-spel byg
 
 Komponentmappen innehåller alla visuella komponenter som används i spelet: kort, bord, knappar, chips och spelarplatser. Logik-mappen innehåller alla funktionsfiler: satsning, chips, kortlek, `gameFlow` och hand. Satsningsfilen innehåller funktionerna satsa, knacka och lägga sig.
 
-Chips-filen innehåller logik för hur satsningar bryts ned för att visa rätt typer av chips (exempelvis bryts en satsning på 51 ned till en 50-chip och en 1-chip). Kortlek-filen innehåller funktionerna för att dela ut och blanda kort.
+Chips-filen innehåller logik för hur satsningar bryts ned för att visa rätt typer av chips. Kortlek-filen innehåller funktionerna för att dela ut och blanda kort.
 
-`gameFlow` innehåller reglerna för hur spelet ska spelas, inklusive spelaruppsättning och funktioner som `getBotAction` (hämtar botens nästa drag). Hand-filen innehåller funktioner för handvärdering, exempelvis identifiering av flush och par.
+`gameFlow` innehåller reglerna för hur spelet ska spelas, inklusive spelaruppsättning och botlogik via `getBotAction`. Hand-filen innehåller funktioner för handvärdering, exempelvis identifiering av flush och par.
 
-Store-mappen innehåller `gameStore`, som hanterar spelstatus, spelarordning och satsningar, samt anropar funktioner från `gameFlow`. Skärmar-mappen innehåller `GameScreen` och `StartScreen`.
+Store-mappen innehåller `gameStore`, som hanterar spelstatus, spelarordning och satsningar. Skärmar-mappen innehåller `GameScreen` och `StartScreen`.
+
+_[Bilder på projektet och mappstruktur läggs till här]_
 
 ### 4.2 Detaljerade Fynd
 
-Spellogiken implementerades framgångsrikt genom en funktionell struktur där regler och beräkningar placerades i separata funktioner [4]. Funktioner för kortutdelning, blandning av kortlek, handvärdering och satsningshantering kunde återanvändas från flera delar av projektet utan beroende av användargränssnittet.
+Spellogiken implementerades framgångsrikt i en funktionell struktur [4]. Nedan redovisas resultaten kopplade till varje frågeställning.
 
-Zustand visade sig vara ett effektivt verktyg för att hantera spelets tillstånd [5]. All speldata lagrades i `gameStore`, vilket innebar att användargränssnittet automatiskt uppdaterades när spelets state förändrades, och behovet av manuell synkronisering minskade.
+**Frågeställning 1 – Funktionell implementation av pokerlogik:** Samtliga centrala spelregler implementerades som separata, statslösa funktioner. Handvärdering hanterades i hand-filen genom en serie filtreringsfunktioner som identifierar hand-kombinationer i rangordning (royal flush ner till högt kort). Funktionerna tog kortarrayer som indata och returnerade ett resultatobjekt utan att mutera någon extern state. Detta visade sig vara en tydlig styrka med FP — logiken var isolerad, lätt att följa och enkel att testa separat.
 
-Genom den löpande jämförelsen framkom att många delar av spelet hade kunnat representeras som objekt i ett klassbaserat system, exempelvis med klasser som `Player`, `Deck`, `Hand` och `Game` [2]. I den funktionella implementationen hölls data och logik mer separerade.
+**Frågeställning 2 – State management med Zustand:** All speldata lagrades i `gameStore`, vilket innebar att användargränssnittet automatiskt uppdaterades när spelets state förändrades [5]. Zustand hanterade det globala tillståndet med minimalt konfigurationsbehov. En viktig observation var att gränsen mellan "ren logik" (i `gameFlow`) och "tillståndshantering" (i `gameStore`) inte alltid var självklar — vissa beslut om var logik hörde hemma krävde medvetna arkitekturval.
 
-Ett viktigt fynd var att separationen mellan `gameFlow`, `gameStore` och `GameScreen` gjorde projektet enklare att underhålla. Logik, state management och presentation kunde utvecklas relativt oberoende av varandra, i linje med principen om separation of concerns [7].
+**Frågeställning 3 och 4 – Jämförelse FP vs OOP (se även avsnitt 4.3):** I den funktionella implementationen hölls data och logik medvetet separerade. I en OOP-implementation hade samma funktionalitet naturligt samlats i objekt: en `Deck`-klass med `shuffle()` och `deal()`, en `Player`-klass med `chips`, `hand` och `bet()`, och ett `Game`-objekt som orkesterar flödet. I den funktionella varianten lever dessa operationer i separata filer och tar den nödvändiga datan som argument, medan state bor externt i Zustand. Ingen av de två strukturerna är objektiv överlägsen — de representerar fundamentalt olika svar på frågan om var ansvar ska placeras.
 
-### 4.3 Oväntade Resultat
+**Frågeställning 5 – Separation of concerns:** Separationen mellan `gameFlow`, `gameStore` och `GameScreen` möjliggjorde att logik, state management och presentation kunde utvecklas relativt oberoende av varandra [7]. Denna separation uppnåddes medvetet och krävde disciplin — det var lätt att låta `gameStore` ta på sig för mycket ansvar.
 
-Ett oväntat resultat var att state management visade sig vara en större utmaning än själva pokerlogiken. Funktioner som handvärdering och kortutdelning implementerades relativt snabbt, medan hanteringen av rundor, spelarordning och synkronisering mellan bots och användare krävde betydligt mer arbete.
+### 4.3 Strukturerad Jämförelse: Funktionell vs Objektorienterad Struktur
 
-Ett annat oväntat resultat var komplexiteten i botarnas beteende. De första implementationerna ledde till att olika bottyper agerade mycket likartat trots att de var avsedda att ha olika spelstilar. Detta krävde flera iterationer och tester innan skillnaderna mellan aggressiva, passiva och adaptiva bots blev tydliga.
+Nedanstående tabell sammanfattar de centrala skillnaderna som identifierades under projektet, baserat på faktisk implementationserfarenhet av den funktionella varianten och arkitektonisk analys av en hypotetisk OOP-variant.
 
-Användartestet visade även att visuella detaljer hade större påverkan på spelupplevelsen än förväntat. Förslag som färgkodning av spelarnamn och tydligare loggmeddelanden förbättrade förståelsen av spelet trots att de inte påverkade spellogiken.
+Dimension
+
+Funktionell (React/TypeScript/Zustand)
+
+Objektorienterad (Java)
+
+**Kodstruktur**
+
+Logik i separata filer och funktioner; data som argument
+
+Logik och data samlat i klasser; objekt ansvarar för sig själva
+
+**State management**
+
+Externt i Zustand; reaktivt UI
+
+Internt i objekt; manuell synkronisering mot UI
+
+**Separation of concerns**
+
+Tydlig filbaserad separation (gameFlow / gameStore / GameScreen)
+
+Naturlig inkapsling per klass, men risk för tätt kopplade objekt
+
+**Testbarhet**
+
+Rena funktioner enkla att enhetstesta
+
+Kräver mock-objekt och setup för klassberoenden
+
+**Läsbarhet**
+
+Dataflödet tydligt; men spridning av logik över filer kan försvåra överblick
+
+Samlad logik per domänobjekt; men arvskedjor kan öka komplexitet
+
+**Underhållbarhet**
+
+Enkelt att lägga till nya funktioner utan att bryta befintlig state
+
+Enkelt att utöka klasser, men risk vid refaktorering av basklasser
+
+**Skalbarhet**
+
+Kräver disciplin för att undvika att gameStore växer okontrollerat
+
+Klassstrukturen skalas naturligt med fler domänobjekt
+
+### 4.4 Oväntade Resultat
+
+Ett oväntat resultat var att state management visade sig vara en större utmaning än själva pokerlogiken. Funktioner som handvärdering och kortutdelning implementerades relativt snabbt, medan hanteringen av rundor, spelarordning och synkronisering mellan bots och användare krävde betydligt mer arbete. Detta pekar på att state management — oavsett paradigm — är den verkliga arkitektoniska kärnfrågan i ett spelprojekt av denna typ.
+
+Ett annat oväntat resultat var komplexiteten i botarnas beteende. De första implementationerna ledde till att olika bottyper agerade mycket likartat trots att de var avsedda att ha olika spelstilar. Detta krävde flera iterationer innan skillnaderna mellan aggressiva, passiva och adaptiva bots blev tydliga. Utmaningen belyste att beteendelogik för icke-deterministiska agenter är svår att testa utan ett formellt testramverk.
+
+Användartestet visade att visuella detaljer hade större påverkan på spelupplevelsen än förväntat. Förslag som färgkodning av spelarnamn och tydligare loggmeddelanden förbättrade förståelsen av spelet trots att de inte påverkade spellogiken.
 
 ----------
 
@@ -238,35 +289,39 @@ Användartestet visade även att visuella detaljer hade större påverkan på sp
 
 ### 5.1 Analys av Resultat
 
-Arbetets syfte var att undersöka hur spellogik kan implementeras i React samt jämföra detta med en objektorienterad struktur. Resultaten visar att React tillsammans med TypeScript och Zustand fungerar väl för utveckling av ett webbaserat pokerspel.
+Resultaten visar att React tillsammans med TypeScript och Zustand fungerar väl för utveckling av ett webbaserat pokerspel, och att en funktionell struktur är genomförbar även för relativt komplex spellogik. Det är dock viktigt att inte övertolka detta som ett generellt argument för att FP alltid är bättre — kontexten spelar en avgörande roll.
 
-Den första frågeställningen besvarades genom implementationen av funktioner för kortutdelning, handvärdering, satsningsrundor och spelarhandlingar. Den andra frågeställningen besvarades genom användningen av Zustand, där all speldata hanterades centralt och automatiskt uppdaterade användargränssnittet [5].
+Den jämförande analysen (avsnitt 4.3) pekar på att valet av paradigm i hög grad är ett val om var komplexiteten ska placeras: i ett OOP-system äger objekten sin data och sina regler, vilket ger tydlig inkapsling men risk för tätt kopplade strukturer; i ett FP-system hanteras state externt och logiken är mer löst kopplad, men det kräver en tydlig arkitekturstrategi för att undvika att state-lagret (här `gameStore`) växer okontrollerat. Båda riskerna är verkliga och identifierades i detta projekt [2] [4].
 
-Den genomförda jämförelsen visade att den funktionella strukturen gav tydlig separation mellan data och logik, medan ett klassbaserat system sannolikt hade gett starkare inkapsling av spelobjekt [2]. Resultatet överensstämmer med tidigare forskning som beskriver funktionell programmering som särskilt lämplig för moderna frontend-applikationer [4] [7].
+En viktig observation är att den upplevda enkelheten med Zustand delvis är en illusion om man ser till det totala systemet — den komplexitet som OOP hanterar via inkapsling hamnar istället i `gameStore` och krävde lika mycket eftertanke. Detta resonerar med litteraturen, som framhåller att komplexitet inte elimineras av ett paradigmval utan omfördelas [7].
+
+Frågeställningarna 3–5, som behandlar jämförelsen mellan paradigmen, kunde inte besvaras lika definitivt som frågeställningarna 1–2 eftersom den objektorienterade varianten aldrig implementerades i praktiken. Konklusionerna är analytiska snarare än empiriska, vilket är en viktig begränsning att hålla i minnet.
 
 ### 5.2 Reflektion över Metod
 
-En styrka med den använda metoden var den iterativa utvecklingsprocessen. Genom GitHub Projects kunde arbetet delas upp i mindre uppgifter som genomfördes stegvis [8]. Detta gjorde projektet mer hanterbart och möjliggjorde kontinuerlig testning.
+En styrka med den använda metoden var den iterativa utvecklingsprocessen. Genom GitHub Projects kunde arbetet delas upp i mindre uppgifter som genomfördes stegvis [8], vilket möjliggjorde kontinuerlig testning och tidig identifiering av arkitektoniska problem.
 
-En annan styrka var att projektet utvecklades från grunden, vilket gav en djupare förståelse för React, Zustand och pokerlogik.
+En annan styrka var att projektet utvecklades från grunden utan att förlita sig på befintliga spelramverk. Detta gav en djupare förståelse för hur React, Zustand och pokerlogik samverkar, och ledde till mer genuina observationer för jämförelseanalysen.
 
-Användningen av AI-assistenter (Claude och ChatGPT) underlättade lösandet av komplexa problem men innebar också en risk att lösningar accepterades utan fullständig förståelse. Detta bör beaktas vid bedömning av kodens pedagogiska värde.
+Användningen av AI-assistenter (Claude och ChatGPT) underlättade lösandet av komplexa problem men innebar en metodologisk risk: lösningar kan accepteras utan fullständig förståelse, vilket försvårar reflektion och analys. Denna risk bedöms som begränsad i de delar av projektet som analyseras i rapporten, men kan ha påverkat djupet i botimplementationen.
 
-En svaghet i metoden är att jämförelsen genomfördes genom analys av arkitektur och kodstruktur snarare än genom att utveckla två fullständiga implementationer. Resultaten bygger därför delvis på teoretiska resonemang. En mer omfattande studie hade kunnat genomföras genom att implementera spelet i både funktionell och objektorienterad form och därefter jämföra dem praktiskt.
+Den tydligaste metodsvagheten är att jämförelsen genomfördes utan en parallell OOP-implementation. En dual-implementation hade möjliggjort empirisk jämförelse av mätvärden som kodrader, antal klasser/funktioner, testbarhet och ändringsfrekvens. Utan detta är jämförelseanalysens slutsatser analytiska resonemang snarare än experimentellt verifierade fakta — en begränsning som är transparent men ändå påverkar reliabiliteten.
 
 ### 5.3 Begränsningar och Kritisk Granskning
 
-Projektet innehåller flera begränsningar. Spelet saknar backend, databas och multiplayer-funktionalitet, vilket innebär att resultaten främst är relevanta för frontend-utveckling.
+Projektet innehåller flera begränsningar. Spelet saknar backend, databas och multiplayer-funktionalitet, vilket innebär att resultaten är begränsade till frontend-domänen. Frågor om paradigmval i distribuerade system eller asynkrona flöden kan inte besvaras utifrån detta projekt.
 
-Användartestningen genomfördes med endast en testperson. Fler testpersoner hade gett mer tillförlitliga resultat kring användbarhet och spelupplevelse.
+Användartestningen genomfördes med en enda testperson, vilket ger otillräckligt underlag för generaliserbara slutsatser om användbarhet eller spelupplevelse. Resultaten är indicier snarare än evidens.
 
-Jämförelsen mellan funktionell programmering och objektorienterad programmering är begränsad eftersom endast den funktionella implementationen utvecklades och testades i praktiken. Den objektorienterade delen bygger på analys och designjämförelser snarare än experimentella resultat [2].
+Jämförelsen mellan FP och OOP är begränsad eftersom den bygger på analys snarare än mätning. Det finns en risk att resonemangen är färgade av erfarenheten av att ha implementerat den funktionella varianten, vilket kan ha gjort den mer intuitiv att bedöma positivt.
+
+Valet av Java som referenspunkt för OOP är rimligt men inte det enda möjliga — Python, C# eller Kotlin hade gett delvis andra slutsatser. Resultaten ska läsas med denna kontextualitet i åtanke.
 
 ### 5.4 Bredare Perspektiv
 
-Projektet visar hur moderna webbtekniker kan användas för att implementera relativt komplex spellogik direkt i webbläsaren utan behov av backend-system [1].
+Projektet illustrerar en bredare trend inom mjukvaruutveckling: att gränserna mellan paradigm suddas ut. React kombinerar funktionella idéer (rena komponenter, immutabel state) med imperativ rendering-logik och kan till och med användas med klasskomponenter. Modern Java stödjer lambda-uttryck och streams, hämtade från funktionell programmering. Det "rena" FP eller OOP-system är en pedagogisk konstruktion mer än en praktisk verklighet [4] [2].
 
-Resultaten kan vara relevanta för utvecklare som arbetar med React-baserade applikationer där komplex affärslogik eller spellogik behöver implementeras. Projektet illustrerar vikten av tydlig separation mellan presentation, state management och affärslogik [7].
+Det praktiska värdet av att förstå skillnaderna ligger inte i att välja ett paradigm och hålla sig till det, utan i att veta när ett paradigm löser ett problem bättre. Frontend med reaktivt UI är ett område där FP:s tydliga dataflöde är en naturlig match. Domänmodellering av komplexa affärssystem är ett område där OOP:s inkapsling historiskt visat sig stark. Insikten från detta projekt — att state management är den verkliga komplexiteten oavsett paradigm — är en generellt tillämpbar lärdom för systemdesign.
 
 ----------
 
@@ -274,25 +329,27 @@ Resultaten kan vara relevanta för utvecklare som arbetar med React-baserade app
 
 ### 6.1 Huvudslutsatser
 
-Arbetet visar att Texas Hold'em Poker kan implementeras framgångsrikt genom en funktionell struktur i React med TypeScript. Spellogiken kunde struktureras i separata, återanvändbara funktioner som täcker kortutdelning, handvärdering, satsningsrundor och botbeteende.
+Arbetet visar att Texas Hold'em Poker kan implementeras framgångsrikt i en funktionell struktur med React och TypeScript. Spellogiken strukturerades i separata, återanvändbara funktioner för kortutdelning, handvärdering, satsningsrundor och botbeteende, och state hanterades effektivt via Zustand.
 
-Zustand visade sig vara ett effektivt verktyg för att hantera globalt state och möjliggjorde tydlig separation mellan användargränssnitt och spellogik [5].
+Den jämförande analysen visar att FP och OOP inte är ekvivalenta alternativ som löser samma problem på likvärdigt sätt, utan att de representerar fundamentalt olika arkitektoniska filosofier. FP håller data och logik separerade och lägger ansvaret för tillståndshantering externt; OOP samlar ansvar i objekt och uppnår separation genom inkapsling. I en React-miljö med reaktivt state är den funktionella filosofin en mer naturlig match — men detta är ett kontextuellt påstående, inte ett universellt.
 
-Jämförelsen med objektorienterad programmering visar att båda paradigmen har sina styrkor. Funktionell programmering passar väl med React och reaktiv state management, medan objektorienterad programmering erbjuder tydligare modellering av spelobjekt och relationer [2] [4]. Projektets syfte har därmed uppfyllts: spellogiken implementerades framgångsrikt och en strukturerad jämförelse mellan paradigmen genomfördes.
+Den viktigaste generella lärdomen från projektet är att state management är den centrala arkitekturella utmaningen i ett spelsystem av denna typ, oavsett vilket paradigm som används. Valet av paradigm bestämmer var och hur state hanteras, men eliminerar inte komplexiteten.
+
+Projektets syfte har uppfyllts: spellogiken implementerades framgångsrikt i en funktionell struktur och en strukturerad jämförelse mellan paradigmen genomfördes utifrån faktisk implementationserfarenhet.
 
 ### 6.2 Bidrag och Betydelse
 
-Arbetet bidrar med ett praktiskt exempel på hur ett webbaserat pokerspel kan utvecklas med moderna frontend-tekniker. Projektet visar hur funktionell programmering kan användas för att strukturera komplex spellogik, samt vilka skillnader som finns jämfört med en objektorienterad approach.
+Arbetet bidrar med ett praktiskt exempel på hur ett webbaserat pokerspel kan struktureras med moderna frontend-tekniker, och med en analytisk jämförelse av FP och OOP grundad i konkret utvecklingserfarenhet snarare än enbart teori. Den strukturerade jämförelsetabellen (avsnitt 4.3) kan tjäna som ett lättillgängligt referensmaterial för studenter och utvecklare som väljer arkitektur för liknande projekt.
 
-Resultatet kan vara användbart för studenter och utvecklare som vill förstå hur olika programmeringsparadigm påverkar arkitektur och kodstruktur [2] [4].
+Projektet belyser också värdet av tydlig lagerarkitektur — separationen mellan `gameFlow`, `gameStore` och `GameScreen` är ett reproducerbart mönster för React-applikationer med komplex affärslogik.
 
 ### 6.3 Framtida Arbete
 
-Framtida arbete skulle kunna inkludera implementation av multiplayer-funktionalitet genom WebSockets och en backend-server.
+Framtida arbete skulle kunna inkludera en parallell implementation av samma pokerspel i Java med OOP, för att möjliggöra empirisk snarare än analytisk jämförelse. En sådan studie kunde mäta konkreta storheter som kodrader per funktion, antal ändringar vid ny regel, testbarhet och körtidsprestanda.
 
-Ytterligare utveckling skulle kunna inkludera mer avancerade AI-motståndare, statistiksystem och databaslagring.
+Ytterligare utveckling av spelet skulle kunna inkludera multiplayer via WebSockets, mer avancerade AI-motståndare, statistiksystem och databaslagring.
 
-För en djupare jämförelse mellan paradigmen skulle samma pokerspel kunna implementeras i både React/TypeScript och Java, för att möjliggöra en praktisk jämförelse av kodstruktur, underhållbarhet och komplexitet [2].
+En intressant fortsättning vore också att undersöka hybridansatser — exempelvis att använda OOP för domänmodellering (klasser för Deck, Hand, Player) kombinerat med Zustand för reaktivt UI. Många moderna frontend-system tillämpar just denna kombination, och att utvärdera den mot renodlade lösningar vore ett värdefullt bidrag.
 
 ----------
 
@@ -310,7 +367,7 @@ För en djupare jämförelse mellan paradigmen skulle samma pokerspel kunna impl
 
 [6] D. Sklansky and M. Malmuth, _Hold'em Poker for Advanced Players_, 3rd ed. Henderson, NV: Two Plus Two Publishing, 1999.
 
-[7] E. Normand, _Grokking Simplicity: Taming Complex Software with Functional Thinking_. Shelter Island, NY: Manning Publications, 2021.
+[7] E. Normand, _Grokking Simplicity: Taming Complex Thinking with Functional Thinking_. Shelter Island, NY: Manning Publications, 2021.
 
 [8] GitHub, _GitHub Projects – Plan and track work_. GitHub, Inc. [Online]. Available: https://docs.github.com/en/issues/planning-and-tracking-with-projects. [Accessed: 1 Jun. 2025].
 
