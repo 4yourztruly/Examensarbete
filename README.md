@@ -116,7 +116,7 @@ Under utvecklingen användes agil utvecklingsmetodik via GitHub Projects [8]. I 
 
 <img width="1088" height="1103" alt="github projects table" src="https://github.com/user-attachments/assets/53058454-1896-4a9b-b90a-18c3ecf17ece" />
 
-*Figur 7: GitHub Projects-tavlan med samtliga issues för projektet.*
+*Figur 1: GitHub Projects-tavlan med samtliga issues för projektet.*
 
 Under utvecklingen implementerades delar av projektet i ordning efter issues. Först skapades en skiss av hur webbsidan skulle se ut, inklusive en startskärm och hur spelet ser ut när det har startats. Skissen för spelläget innehöll ett spelarbord, spelarplatser, kort, chips och knappar för användarens val – satsa, knacka och lägga sig.
 
@@ -207,12 +207,12 @@ Store-mappen innehåller `gameStore`, som hanterar spelstatus, spelarordning och
 
 <img width="1550" height="968" alt="poker game start image" src="https://github.com/user-attachments/assets/be5bc504-2c32-4e1e-b9db-2319eaa25d61" />
 
-*Figur 1: Startskärmen (StartScreen) med highscore-visning och startknapp.*
+*Figur 2: Startskärmen (StartScreen) med highscore-visning och startknapp.*
 
 <img width="1331" height="1125" alt="poker game playing pre flop" src="https://github.com/user-attachments/assets/d0431f3c-2670-4c37-9c1b-ef1f0516ea86" />
 
 
-*Figur 2: Pre-flop-stadiet. De gemensamma korten är ännu dolda, blinds har placerats och bots har redan agerat i loggen. Spelaren väntar på att agera.*
+*Figur 3: Pre-flop-stadiet. De gemensamma korten är ännu dolda, blinds har placerats och bots har redan agerat i loggen. Spelaren väntar på att agera.*
 
 ### 4.2 Detaljerade Fynd
 
@@ -221,19 +221,19 @@ Spellogiken implementerades framgångsrikt i en funktionell struktur [4]. Nedan 
 **Frågeställning 1 – Funktionell implementation av pokerlogik:** Samtliga centrala spelregler implementerades som separata, statslösa funktioner. Handvärdering hanterades i hand-filen genom en serie filtreringsfunktioner som identifierar hand-kombinationer i rangordning (royal flush ner till högt kort). Funktionerna tog kortarrayer som indata och returnerade ett resultatobjekt utan att mutera någon extern state. Detta visade sig vara en tydlig styrka med FP — logiken var isolerad, lätt att följa och enkel att testa separat.
 
 <img width="1344" height="1028" alt="poker game post flop" src="https://github.com/user-attachments/assets/880a19e9-2087-4022-ac21-f27ebd7474bf" />
-*Figur 3: GameScreen under flop-rundan, med satsningskontroller, chipvisualisering och spelloggen nedtill.*
+*Figur 4: GameScreen under flop-rundan, med satsningskontroller, chipvisualisering och spelloggen nedtill.*
 
 **Frågeställning 2 – State management med Zustand:** All speldata lagrades i `gameStore`, vilket innebar att användargränssnittet automatiskt uppdaterades när spelets state förändrades [5]. Zustand hanterade det globala tillståndet med minimalt konfigurationsbehov. En viktig observation var att gränsen mellan "ren logik" (i `gameFlow`) och "tillståndshantering" (i `gameStore`) inte alltid var självklar — vissa beslut om var logik hörde hemma krävde medvetna arkitekturval.
 
 <img width="1177" height="1018" alt="poker game pre showdown" src="https://github.com/user-attachments/assets/ae4ee439-f326-42e8-91f2-ca8604ce02f1" />
 
-*Figur 4: GameScreen vid river. Realtidsuppdateringen av handvärdet (Two Pair) illustrerar Zustand-storens reaktiva state management.*
+*Figur 5: GameScreen vid river. Realtidsuppdateringen av handvärdet (Two Pair) illustrerar Zustand-storens reaktiva state management.*
 
 **Frågeställning 3 och 4 – Jämförelse FP vs OOP (se även avsnitt 4.3):** I den funktionella implementationen hölls data och logik medvetet separerade. I en OOP-implementation hade samma funktionalitet naturligt samlats i objekt: en `Deck`-klass med `shuffle()` och `deal()`, en `Player`-klass med `chips`, `hand` och `bet()`, och ett `Game`-objekt som orkesterar flödet. I den funktionella varianten lever dessa operationer i separata filer och tar den nödvändiga datan som argument, medan state bor externt i Zustand. Ingen av de två strukturerna är objektiv överlägsen — de representerar fundamentalt olika svar på frågan om var ansvar ska placeras.
 
 <img width="1110" height="916" alt="poker game all in image" src="https://github.com/user-attachments/assets/1d506cf4-d7cd-4137-8c4c-469f63aa8843" />
 
-*Figur 5: All-in-scenario med tre spelare. Detta tillstånd kräver att gameStore håller koll på varje spelares insats, all-in-belopp och aktiv status parallellt — ett av de mer komplexa state management-fallen i projektet.*
+*Figur 6: All-in-scenario med tre spelare. Detta tillstånd kräver att gameStore håller koll på varje spelares insats, all-in-belopp och aktiv status parallellt — ett av de mer komplexa state management-fallen i projektet.*
 
 **Frågeställning 5 – Separation of concerns:** Separationen mellan `gameFlow`, `gameStore` och `GameScreen` möjliggjorde att logik, state management och presentation kunde utvecklas relativt oberoende av varandra [7]. Denna separation uppnåddes medvetet och krävde disciplin — det var lätt att låta `gameStore` ta på sig för mycket ansvar.
 
@@ -261,7 +261,7 @@ Användartestet visade att visuella detaljer hade större påverkan på speluppl
 
 <img width="1316" height="1108" alt="poker game game over" src="https://github.com/user-attachments/assets/0d9a68c3-2a09-4025-b0e9-6c42dc6bfc27" />
 
-*Figur 6: Game Over-läget med showdown-resultat och knapp för att återvända till startmenyn. Loggen nedtill visar hela händelseförloppet för den sista handen.*
+*Figur 7: Game Over-läget med showdown-resultat och knapp för att återvända till startmenyn. Loggen nedtill visar hela händelseförloppet för den sista handen.*
 
 ---
 
@@ -311,7 +311,7 @@ Det praktiska värdet av att förstå skillnaderna ligger inte i att välja ett 
 
 Arbetet visar att Texas Hold'em Poker kan implementeras framgångsrikt i en funktionell struktur med React och TypeScript. Spellogiken strukturerades i separata, återanvändbara funktioner för kortutdelning, handvärdering, satsningsrundor och botbeteende, och state hanterades effektivt via Zustand.
 
-Den jämförande analysen visar att FP och OOP inte är ekvivalenta alternativ som löser samma problem på likvärdigt sätt, utan att de representerar fundamentalt olika arkitektoniska filosofier. FP håller data och logik separerade och lägger ansvaret för tillståndshantering externt; OOP samlar ansvar i objekt och uppnår separation genom inkapsling. I en React-miljö med reaktivt state är den funktionella filosofin en mer naturlig match — men detta är ett kontextuellt påstående, inte ett universellt.
+Den jämförande analysen visar att FP och OOP inte är ekvivalenta alternativ som löser samma problem på likvärdigt sätt, utan att de representerar fundamentalt olika arkitektoniska filosofier. FP håller data och logik separerade och lägger ansvaret för tillståndshantering externt; OOP samlar ansvar i objekt och uppnår separation genom inkapsling. I en React-miljö med reaktivt state är den funktionella filosofin en mer naturlig match — men detta är ett kontextuellt påstående, not ett universellt.
 
 Den viktigaste generella lärdomen från projektet är att state management är den centrala arkitekturella utmaningen i ett spelsystem av denna typ, oavsett vilket paradigm som används. Valet av paradigm bestämmer var och hur state hanteras, men eliminerar inte komplexiteten.
 
@@ -357,10 +357,10 @@ En intressant fortsättning vore också att undersöka hybridansatser — exempe
 
 **Figurförteckning:**
 
-- Figur 1: Startskärmen (StartScreen) med highscore-visning och startknapp
-- Figur 2: Pre-flop-stadiet direkt efter spelstart med blinds och satsningsalternativ
-- Figur 3: GameScreen under flop-rundan med satsningskontroller och spelloggen
-- Figur 4: GameScreen vid river med realtidsuppdaterad handvärdering (Two Pair)
-- Figur 5: All-in-scenario under turn med flera simultant all-in-spelare
-- Figur 6: Game Over-läget med showdown-resultat och returknapp till startmenyn
-- Figur 7: GitHub Projects-tavlan med samtliga issues för projektet
+- Figur 1: GitHub Projects-tavlan med samtliga issues för projektet
+- Figur 2: Startskärmen (StartScreen) med highscore-visning och startknapp
+- Figur 3: Pre-flop-stadiet direkt efter spelstart med blinds och satsningsalternativ
+- Figur 4: GameScreen under flop-rundan med satsningskontroller och spelloggen
+- Figur 5: GameScreen vid river med realtidsuppdaterad handvärdering (Two Pair)
+- Figur 6: All-in-scenario under turn med flera simultant all-in-spelare
+- Figur 7: Game Over-läget med showdown-resultat och returknapp till startmenyn
